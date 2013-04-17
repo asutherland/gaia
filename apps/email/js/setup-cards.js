@@ -861,6 +861,10 @@ function SettingsDebugCard(domNode, mode, args) {
   domNode.getElementsByClassName('tng-dbg-dump-storage')[0]
     .addEventListener('click', this.dumpLog.bind(this, 'storage'), false);
 
+  this.spinningSpinners = false;
+  domNode.getElementsByClassName('tng-dbg-spin-spinners')[0]
+    .addEventListener('click', this.toggleSpinSpinners());
+
   this.loggingButton = domNode.getElementsByClassName('tng-dbg-logging')[0];
   this.dangerousLoggingButton =
     domNode.getElementsByClassName('tng-dbg-dangerous-logging')[0];
@@ -912,6 +916,13 @@ SettingsDebugCard.prototype = {
     }
     this.loggingButton.textContent = label;
     this.dangerousLoggingButton.textContent = dangerLabel;
+  },
+
+  toggleSpinSpinners: function() {
+    var spin = this.spinningSpinners = !this.spinningSpinners;
+    var listCardInst = Cards.findCardObject(['message-list', 'nonsearch']);
+    if (listCardInst)
+      listCardInst.cardImpl.onStatusChange(spin ? 'synchronizing' : 'synced');
   },
 
   die: function() {
