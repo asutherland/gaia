@@ -119,13 +119,20 @@ function MessageListCard(domNode, mode, args) {
     domNode.getElementsByClassName('msg-messages-sync-more')[0];
   this.syncMoreNode
     .addEventListener('click', this.onGetMoreMessages.bind(this), false);
+  // The progress bar is temporarily disabled in favor of spinning the refresh
+  // button's icons while we figure out a longer term solution that minimizes
+  // our performance problems.
+  /*
   this.progressNode =
     domNode.getElementsByClassName('msg-list-progress')[0];
+   */
   // The active timeout that will cause us to set the progressbar to
   // indeterminate 'candybar' state when it fires.  Reset every time a new
   // progress notification is received.
+  /*
   this.progressCandybarTimer = null;
   this._bound_onCandybarTimeout = this.onCandybarTimeout.bind(this);
+   */
 
   // - header buttons: non-edit mode
   domNode.getElementsByClassName('msg-folder-list-btn')[0]
@@ -471,6 +478,8 @@ MessageListCard.prototype = {
         this.syncMoreNode.classList.add('collapsed');
         this.hideEmptyLayout();
 
+        this.toolbar.refreshBtn.setAttribute('state', 'synchronizing');
+        /*
         this.progressNode.value = this.messagesSlice ?
                                   this.messagesSlice.syncProgress : 0;
         this.progressNode.classList.remove('pack-activity');
@@ -480,6 +489,7 @@ MessageListCard.prototype = {
         this.progressCandybarTimer =
           window.setTimeout(this._bound_onCandybarTimeout,
                             this.PROGRESS_CANDYBAR_TIMEOUT_MS);
+         */
         break;
       case 'syncfailed':
         // If there was a problem talking to the server, notify the user and
@@ -490,23 +500,28 @@ MessageListCard.prototype = {
 
         // Fall through...
       case 'synced':
+        this.toolbar.refreshBtn.setAttribute('state', 'synchronized');
         this.syncingNode.classList.add('collapsed');
+        /*
         this.progressNode.classList.remove('pack-activity');
         this.progressNode.classList.add('hidden');
         if (this.progressCandybarTimer) {
           window.clearTimeout(this.progressCandybarTimer);
           this.progressCandybarTimer = null;
         }
+        */
         break;
     }
   },
 
+  /*
   onCandybarTimeout: function() {
     if (this.progressCandybarTimer) {
       this.progressNode.classList.add('pack-activity');
       this.progressCandybarTimer = null;
     }
   },
+  */
 
   /**
    * Hide buttons that are not appropriate if we have no messages and display
