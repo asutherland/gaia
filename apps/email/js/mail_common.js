@@ -412,6 +412,8 @@ Cards = {
       if (showMethod !== 'none')
         this.eatEventsUntilNextCard();
 
+      console.log('deferring card push for type:', type);
+
       require(['cards/' + type], function() {
         this.pushCard.apply(this, cbArgs);
       }.bind(this));
@@ -423,8 +425,6 @@ Cards = {
     var modeDef = cardDef.modes[mode];
     if (!modeDef)
       throw new Error('No such card mode: ' + mode);
-
-    console.log('pushCard for type: ' + type);
 
     var domNode = args.cachedNode ?
                   args.cachedNode : cardDef.templateNode.cloneNode(true);
@@ -459,6 +459,9 @@ Cards = {
       domNode.classList.add('after');
     }
     this._cardStack.splice(cardIndex, 0, cardInst);
+    console.log('pushCard:', type, '  mode:', mode, '  placement:', placement,
+                '  index:', cardIndex,
+                '  count:', this._cardStack.length);
 
     if (!args.cachedNode)
       this._cardsNode.insertBefore(domNode, insertBuddy);
@@ -676,6 +679,7 @@ Cards = {
     if (cardDomNode && this._cardStack.length === 1) {
       // No card to go to when done, so ask for a default
       // card and continue work once it exists.
+      console.log('removeCardAndSuccessors: transition to default card!');
       return Cards.pushDefaultCard(function() {
         this.removeCardAndSuccessors(cardDomNode, showMethod, numCards,
                                     nextCardSpec);
@@ -706,15 +710,26 @@ Cards = {
     if (!numCards)
       numCards = this._cardStack.length - firstIndex;
 
+    console.log('removeCardAndSuccessors: firstIndex:', firstIndex,
+                '  domNodeWasNull?:', cardDomNode === null,
+                '  numCards:', numCards);
+
     if (showMethod !== 'none') {
       var nextCardIndex = null;
-      if (nextCardSpec)
+      if (nextCardSpec) {
         nextCardIndex = this._findCard(nextCardSpec);
-      else if (this._cardStack.length)
+      }
+      else if (this._cardStack.length) {
         nextCardIndex = Math.min(firstIndex - 1, this._cardStack.length - 1);
+        console.log('  picked next card index:', nextCardIndex,
+                    'from min(' + (firstIndex - 1) + ', ' +
+                      (this._cardStack.length - 1) + ')');
+      }
 
       this._showCard(nextCardIndex, showMethod, 'back');
     }
+
+    var activeCardIndexWas = this.activeCardIndex;
 
     // Update activeCardIndex if nodes were removed that would affect its
     // value.
@@ -724,6 +739,9 @@ Cards = {
         this.activeCardIndex = -1;
       }
     }
+
+    console.log('  rcas: new activeCard:', this.activeCardIndex,
+                '  old activeCard:', activeCardIndexWas);
 
     var deadCardInsts = this._cardStack.splice(
                           firstIndex, numCards);
@@ -738,9 +756,11 @@ Cards = {
       switch (showMethod) {
         case 'animate':
         case 'immediate': // XXX handle properly
+          console.log('  rcas: waiting on animation to remove node');
           this._animatingDeadDomNodes.push(cardInst.domNode);
           break;
         case 'none':
+          console.log('  rcas: removing nodes immediately');
           cardInst.domNode.parentNode.removeChild(cardInst.domNode);
           break;
       }
@@ -757,6 +777,7 @@ Cards = {
   _showCard: function(cardIndex, showMethod, navDirection) {
     // Do not do anything if this is a show card for the current card.
     if (cardIndex === this.activeCardIndex) {
+      console.log('showCard:', cardIndex, '(already active!)');
       return;
     }
 
@@ -764,6 +785,7 @@ Cards = {
       // Some cards were removed, adjust.
       cardIndex = this._cardStack.length - 1;
     }
+    var activeCardIndexWas = this.activeCardIndex;
     if (this.activeCardIndex > this._cardStack.length - 1) {
       this.activeCardIndex = -1;
     }
@@ -771,6 +793,10 @@ Cards = {
     if (this.activeCardIndex === -1) {
       this.activeCardIndex = cardIndex === 0 ? cardIndex : cardIndex - 1;
     }
+
+    console.log('showCard:', cardIndex, '  method:', showMethod,
+                '  dir:', navDirection, '  active:', this.activeCardIndex,
+                '  before fixup:', activeCardIndexWas);
 
     var cardInst = (cardIndex !== null) ? this._cardStack[cardIndex] : null;
     var beginNode = this._cardStack[this.activeCardIndex].domNode;
@@ -815,6 +841,7 @@ Cards = {
     // accordingly.
     if (endNode && isForward && this._zIndex) {
       endNode.style.zIndex = this._zIndex;
+      console.log('  applied zIndex:', this._zIndex);
     }
 
     var cardsNode = this._cardsNode;
@@ -890,6 +917,9 @@ Cards = {
       this._transitionCount -= 1;
 
     if (this._transitionCount === 0) {
+      console.log('onTransitionEnd: dead count to reap:',
+                  this._animatingDeadDomNodes.length);
+
       if (this._eatingEventsUntilNextCard) {
         this._eatingEventsUntilNextCard = false;
       }
