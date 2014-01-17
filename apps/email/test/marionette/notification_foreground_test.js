@@ -47,12 +47,7 @@ marionette('email notifications, foreground', function() {
     for (var i = 0; i < messageCount; i++)
       sendEmail(server1);
 
-    // Now set up second account, to confirm system notifications
-    // are only triggered in certain situations.
-    app.tapFolderListButton();
-    app.tapSettingsButton();
-    app.tapAddAccountButton();
-    app.manualSetupImapEmail(server2);
+    app.setupAdditionalAccount(server2);
   }
 
   setup(function() {
@@ -96,12 +91,7 @@ marionette('email notifications, foreground', function() {
     configureAndSend(1);
 
     // Switch back to testy1 account in the UI
-    app.tapFolderListButton();
-    app.tapAccountListButton();
-    // switch to the testy1 account
-    app.switchAccount(1);
-    // hide the folder list page
-    app.tapFolderListCloseButton();
+    app.switchToAccount(server1);
 
     // Now sync
     sync.triggerSync();

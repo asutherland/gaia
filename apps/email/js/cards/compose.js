@@ -66,6 +66,12 @@ function ComposeCard(domNode, mode, args) {
   this.composer = args.composer;
   this.composerData = args.composerData || {};
   this.activity = args.activity;
+  // Track whether the compose card is fully initialized and actually ready.
+  // This exists mainly for the benefit of the Marionette tests since we don't
+  // reflect any delay in our readiness to the user with an explicit spinner
+  // or anything since we expect the delay to be trivial and an attempt to
+  // express it confusing/incriminating.
+  this.ready = false;
   this.sending = false;
 
   domNode.getElementsByClassName('cmp-back-btn')[0]
@@ -213,6 +219,9 @@ ComposeCard.prototype = {
         /* no click handler because no navigation desired */ null);
       this.htmlIframeNode = ishims.iframe;
     }
+
+    // We are actually ready to go now!  Let Marionette know!
+    this.ready = true;
   },
 
   _saveStateToComposer: function() {

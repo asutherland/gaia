@@ -1,13 +1,5 @@
 var server = require('mail-fakeservers');
 
-var DEFAULT_OPTIONS = Object.freeze({
-  // convention from GELAM
-  credentials: {
-    username: 'testy',
-    password: 'testy'
-  }
-});
-
 /**
  * Updates given object with the state from an imapStack.
  *
@@ -16,14 +8,26 @@ var DEFAULT_OPTIONS = Object.freeze({
  * @param {Object} options for setup.
  */
 function updateState(state, stack, options) {
-  if (!options) {
-    options = DEFAULT_OPTIONS;
+  switch (options.type) {
+    case 'imap':
+      state.receive = {
+        type: 'imap',
+        port: stack.imapPort
+      };
+      break;
+    case 'pop3':
+      state.receive = {
+        type: 'pop3',
+        port: stack.pop3Port
+      };
+      break;
   }
+  state.send = {
+    type: 'smtp',
+    port: stack.smtpPort
+  };
 
-  state.imap = { port: stack.imapPort };
-  state.smtp = { port: stack.smtpPort };
-
-  [state.imap, state.smtp].forEach(function(serverState) {
+  [state.receive, state.send].forEach(function(serverState) {
     serverState.username = options.credentials.username;
     serverState.password = options.credentials.password;
     serverState.hostname = 'localhost';
@@ -43,17 +47,15 @@ function use(options, mochaContext) {
    * @type {Object}
    * @private
    */
-  var state = {};
+  var state = {
+    credentials: options.credentials
+  };
 
   // spawns servers
   var controlServer;
 
   // current imap/smtp servers
-  var imapStack;
-
-  if (options === null) {
-    options = DEFAULT_OPTIONS;
-  }
+  var serverStack;
 
   suiteSetup(function(done) {
     this.timeout('20s');
@@ -65,11 +67,21 @@ function use(options, mochaContext) {
 
   // we need a new stack each test
   setup(function(done) {
-    controlServer.createImapStack(options, function(err, imap) {
-      // update the state information
-      updateState(state, imap, options);
+    var creationFunc;
+    switch (options.type) {
+      case 'imap':
+        creationFunc = 'createImapStack';
+        break;
+      case 'pop3':
+        creationFunc = 'createPop3Stack';
+        break;
+    }
 
-      imapStack = imap;
+    controlServer[creationFunc](options, function(err, _serverStack) {
+      // update the state information
+      updateState(state, _serverStack, options);
+
+      serverStack = _serverStack;
       done(err);
     });
   });

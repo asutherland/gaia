@@ -2,7 +2,7 @@ var Email = require('./lib/email');
 var assert = require('assert');
 var serverHelper = require('./lib/server_helper');
 
-marionette('go to local drafts page', function() {
+marionette('local drafts', function() {
   var app,
       client = marionette.client({
         settings: {
@@ -18,30 +18,29 @@ marionette('go to local drafts page', function() {
 
   var server = serverHelper.use(null, this);
 
-  // Disable the test because of http://bugzil.la/925961#c36,
-  // and we follow up the issue in http://bugzil.la/936328.
-  test.skip('should show the correct email address ' +
-       'in a item of mail list', function() {
+  test('round-tripping drafts should not corrupt the message author',
+       function() {
     const EMAIL_ADDRESS = 'firefox-os-drafts@example.com';
     const EMAIL_SUBJECT = 'I still have a dream';
 
-    app.manualSetupImapEmail(server);
+    app.initialSetup([server]);
 
-    // go to the Local Drafts page
-    app.tapFolderListButton();
-    app.tapLocalDraftsItem();
+    app.switchToFolder({ type: 'localdrafts' });
 
-    // save a local draft
+    // create and save a (local) draft
     app.tapCompose();
     app.typeTo(EMAIL_ADDRESS);
     app.typeSubject(EMAIL_SUBJECT);
-    app.saveLocalDrafts();
+    app.saveDraft();
 
-    // edit the draft to save it again
+    // edit the draft, then save it again
     app.tapEmailBySubject(EMAIL_SUBJECT, 'compose');
-    app.saveLocalDrafts();
+    app.saveDraft();
 
-    // get email address on the email item
+    // verify the author hasn't changed to undefined or otherwise broken
+    app.assertMessagesInList([
+      { author: EMAIL_ADDRESS, subject: EMAIL_SUBJECT }
+    ]);
     var email = app.getEmailBySubject(EMAIL_SUBJECT).
       findElement('.msg-header-author').
       text();

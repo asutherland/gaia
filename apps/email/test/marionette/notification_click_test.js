@@ -42,7 +42,7 @@ marionette('email notifications, click', function() {
     // Set up testy1, send email to testy1, since smtp fakserver
     // is paired with the imap fakserver for that account. So,
     // no cross sending of email across fakeserver instances.
-    app.manualSetupImapEmail(server1);
+    app.manualSetupEmail(server1);
 
     for (var i = 0; i < messageCount; i++)
       sendEmail(server1);
@@ -52,7 +52,7 @@ marionette('email notifications, click', function() {
     app.tapFolderListButton();
     app.tapSettingsButton();
     app.tapAddAccountButton();
-    app.manualSetupImapEmail(server2);
+    app.manualSetupEmail(server2);
   }
 
   setup(function() {

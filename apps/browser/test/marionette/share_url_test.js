@@ -92,7 +92,7 @@ marionette('share url from browser', function() {
   test.skip('share button should put url in email body', function() {
     shareViaEmail(browser, fileServer, COOLPAGE);
     email.confirmWantAccount();
-    email.manualSetupImapEmail(emailServer, 'waitForCompose');
+    email.manualSetupEmail(emailServer, 'waitForCompose');
     var body = email.getComposeBody();
     assert.ok(body.indexOf(COOLPAGE) !== -1);
   });
@@ -109,7 +109,7 @@ marionette('share url from browser', function() {
     client.switchToFrame(frame);
     browser.mailtoLink.click();
     email.confirmWantAccount();
-    email.manualSetupImapEmail(emailServer, 'waitForCompose');
+    email.manualSetupEmail(emailServer, 'waitForCompose');
     var to = email.getComposeTo();
     assert.strictEqual(to, 'gaye@mozilla.com');
   });

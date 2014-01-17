@@ -55,6 +55,11 @@ function MessageReaderCard(domNode, mode, args) {
 
   this.domNode = domNode;
   this.messageSuid = args.messageSuid;
+  // Marionette testing support to expose whether all body parts have been fully
+  // reflected into the DOM For Marionette testing purposes.  See the rationale
+  // on message_list's 'ready' property for more rationalization.  Better
+  // solutions always appreciated.
+  this.fullyDisplayed = false;
 
   this.previousBtn = domNode.getElementsByClassName('msg-up-btn')[0];
   this.previousIcon = domNode.getElementsByClassName('icon-up')[0];
@@ -772,6 +777,13 @@ MessageReaderCard.prototype = {
         showEmbeddedImages = body.embeddedImageCount &&
                              body.embeddedImagesDownloaded;
 
+    // Reflect that we will have fully displayed our body state for Marionette
+    // testing once this method has completed.  (This is a long method, so let's
+    // do it here.  If we throw an exception this means that our tests should
+    // fail on a content mismatch rather than a timeout.)
+    if (body.bodyRepsDownloaded) {
+      this.fullyDisplayed = true;
+    }
 
     // The first time we build the body DOM, do one-time bootstrapping:
     if (!this._builtBodyDom) {
