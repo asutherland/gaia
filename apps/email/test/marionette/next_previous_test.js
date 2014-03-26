@@ -1,5 +1,5 @@
 'use strict';
-var Email = require('./lib/email');
+var EmailApp = require('./lib/email');
 var assert = require('assert');
 var serverHelper = require('./lib/server_helper');
 
@@ -17,7 +17,7 @@ function isHeaderButtonEnabled(button) {
   return className.indexOf('icon-disabled') === -1;
 }
 
-marionette('email next previous', function() {
+marionette('email', function() {
   var app;
 
   var client = marionette.client({
@@ -29,14 +29,100 @@ marionette('email next previous', function() {
 
   var server = serverHelper.use(null, this);
 
+  test('next previous', function() {
+    ////////////////////////////////////////////////////////////////////////////
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    app.testing('simple navigation');
+
+    var reader = messageList.readEmailAtIndex(0, 'display the first message');
+    reader.assertUIState(
+      'msgUp is disabled at the top of the list',
+      {
+        message: messages[0],
+        msgUp: 'disabled',
+        msgDown: 'enabled'
+      });
+
+    reader.advanceDown('advance to the second/middle message');
+    reader.assertUIState(
+      'both navigation buttons are enabled in the middle of the list',
+      {
+        message: messages[1],
+        msgUp: 'enabled',
+        msgDown: 'enabled'
+      });
+
+    reader.advanceDown('advance to the last message');
+    reader.assertUIState(
+      'msgDown is disabled at the bottom of the list',
+      {
+        message: messages[2],
+        msgUp: 'enabled',
+        msgDown: 'enabled'
+      });
+
+    reader.advanceDown(
+      'nothing happens if we hit down when disabled/at the bottom',
+      { expectFail: true });
+    reader.assertUIState(
+      'the UI should not have changed',
+      {
+        message: messages[2],
+        msgUp: 'enabled',
+        msgDown: 'enabled'
+      });
+
+    reader.advanceUp('back to the middle message');
+    reader.assertUIState(
+      'both navigation buttons are enabled in the middle of the list',
+      {
+        message: messages[1],
+        msgUp: 'enabled',
+        msgDown: 'enabled'
+      });
+
+    reader.advanceUp('back to the first message');
+    reader.assertUIState(
+      'msgUp is disabled at the top of the list',
+      {
+        message: messages[0],
+        msgUp: 'disabled',
+        msgDown: 'enabled'
+      });
+
+    reader.advanceUp(
+      'nothing happens if we hit up when disabled/at the top',
+      { expectFail: true });
+    reader.assertUIState(
+      'msgUp is disabled at the top of the list',
+      {
+        message: messages[0],
+        msgUp: 'disabled',
+        msgDown: 'enabled'
+      });
+
+    ////////////////////////////////////////////////////////////////////////////
+    app.testing('reacting to added and removed messages');
+
+
+
+    ////////////////////////////////////////////////////////////////////////////
+    app.testing('scrolling of the message list to match reader traversal');
+  });
+
   setup(function() {
-    app = new Email(client);
+
+
+    app = new EmailApp(client);
     app.launch();
     app.manualSetupImapEmail(server);
     app.sendAndReceiveMessages([
       { to: 'testy@localhost', subject: 'One', body: 'Fish' },
       { to: 'testy@localhost', subject: 'Two', body: 'Fish' }
     ]);
+    app.testPrep
   });
 
   test('should grey out up when no message above', function() {

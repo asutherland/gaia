@@ -24,6 +24,7 @@ var templateNode = require('tmpl!./compose.html'),
     iframeShims = require('iframe_shims'),
     Marquee = require('marquee'),
     mozL10n = require('l10n!'),
+    logger = require('loggest_tiny'),
 
     prettyFileSize = common.prettyFileSize,
     Cards = common.Cards,
@@ -451,9 +452,10 @@ ComposeCard.prototype = {
     // (Manual saves should not happen when 'sending' is true, but breaking
     // auto-saves would be very bad form.)
     if (this.sending && reason === 'automatic') {
-      console.log('compose: skipping autosave because send in progress');
+      logger.log('composer.skipSave', { why: 'sending', when: reason });
       return;
     }
+    logger.log('composer.save', { why: reason });
     this._saveStateToComposer();
     evt.emit('uiDataOperationStart', this._dataIdSaveDraft);
     this.composer.saveDraft(function() {
@@ -862,12 +864,12 @@ ComposeCard.prototype = {
     }).bind(this);
 
     if (!this._saveNeeded()) {
-      console.log('compose: back: no save needed, exiting without prompt');
+      logger.log('composer.skipSave', { why: 'not needed', when: 'back' });
       goBack();
       return;
     }
 
-    console.log('compose: back: save needed, prompting');
+    logger.log('composer.savePrompt', {});
     var menu = cmpDraftMenuNode.cloneNode(true);
     this._savePromptMenu = menu;
     document.body.appendChild(menu);
@@ -878,17 +880,16 @@ ComposeCard.prototype = {
 
       switch (evt.explicitOriginalTarget.id) {
         case 'cmp-draft-save':
-          console.log('compose: explicit draft save on exit');
           this._saveDraft('explicit');
           goBack();
           break;
         case 'cmp-draft-discard':
-          console.log('compose: explicit draft discard on exit');
+          logger.log('compose.discardDraft', {});
           this.composer.abortCompositionDeleteDraft();
           goBack();
           break;
         case 'cmp-draft-cancel':
-          console.log('compose: canceled compose exit');
+          logger.log('compose.cancelBack', {});
           break;
       }
       return false;
@@ -902,7 +903,6 @@ ComposeCard.prototype = {
    */
   onCurrentCardDocumentVisibilityChange: function() {
     if (document.hidden && this._saveNeeded()) {
-      console.log('compose: autosaving; we became hidden and save needed.');
       this._saveDraft('automatic');
     }
   },

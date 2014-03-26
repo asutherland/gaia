@@ -11,7 +11,8 @@ var Cards,
     evt = require('evt'),
     mozL10n = require('l10n!'),
     confirmDialogTemplateNode = require('tmpl!./cards/confirm_dialog.html'),
-    ValueSelector = require('value_selector');
+    ValueSelector = require('value_selector'),
+    logger = require('loggest_tiny');
 
 var hookupInputAreaResetButtons = require('input_areas');
 
@@ -372,9 +373,11 @@ Cards = {
       var cbArgs = Array.slice(arguments);
       this._pendingPush = [type, mode];
 
+      logger.log('cards.push:deferred', { type: type, mode: mode });
+
       // Only eat clicks if the card will be visibly displayed.
       if (showMethod !== 'none')
-        this.eatEventsUntilNextCard();
+        this.eatEventsUntilNextCard('deferred');
 
       require(['cards/' + type], function() {
         this.pushCard.apply(this, cbArgs);
@@ -388,7 +391,8 @@ Cards = {
     if (!modeDef)
       throw new Error('No such card mode: ' + mode);
 
-    console.log('pushCard for type: ' + type);
+    logger.log('cards.push', { type: type, mode: mode, showMethod: showMethod,
+                               placement: placement });
 
     var domNode = args.cachedNode ?
                   args.cachedNode : cardDef.templateNode.cloneNode(true);
@@ -585,10 +589,12 @@ Cards = {
   tellCard: function(query, what) {
     var cardIndex = this._findCard(query),
         cardInst = this._cardStack[cardIndex];
-    if (!('told' in cardInst.cardImpl))
-      console.warn('Tried to tell a card that\'s not listening!', query, what);
-    else
+    if (!('told' in cardInst.cardImpl)) {
+      logger.error('badTell', { query: query, what: what });
+    }
+    else {
       cardInst.cardImpl.told(what);
+    }
   },
 
   /**
@@ -733,7 +739,7 @@ Cards = {
         cardInst.cardImpl.die();
       }
       catch (ex) {
-        console.warn('Problem cleaning up card:', ex, '\n', ex.stack);
+        logger.warn('cardDieProblem', { ex: ex, stack: ex.stack });
       }
       switch (showMethod) {
         case 'animate':
@@ -831,6 +837,7 @@ Cards = {
       cardsNode.clientWidth;
       // explicitly clear since there will be no animation
       this._eatingEventsUntilNextCard = false;
+      logger.log('cards.eatingEvents:end', { why: showMethod });
     }
     else if (showMethod === 'none') {
       // do not set _eatingEventsUntilNextCard, but don't clear it either.
@@ -838,6 +845,7 @@ Cards = {
     else {
       this._transitionCount = (beginNode && endNode) ? 2 : 1;
       this._eatingEventsUntilNextCard = true;
+      logger.log('cards.eatingEvents:begin', { why: showMethod });
     }
 
     if (this.activeCardIndex === cardIndex) {
@@ -900,6 +908,7 @@ Cards = {
     if (this._transitionCount === 0) {
       if (this._eatingEventsUntilNextCard) {
         this._eatingEventsUntilNextCard = false;
+        logger.log('cards.eatingEvents:end', { why: 'transitionend' });
       }
       if (this._animatingDeadDomNodes.length) {
         // Use a setTimeout to give the animation some space to settle.
@@ -940,7 +949,7 @@ Cards = {
       // also compete with current card and data model performance.
       var nextCards = activeCard.cardImpl.nextCards;
       if (nextCards) {
-        console.log('Preloading cards: ' + nextCards);
+        logger.log('cards.preload', { nextCards: nextCards });
         require(nextCards.map(function(id) {
           return 'cards/' + id;
         }));
@@ -1000,8 +1009,9 @@ Cards = {
    * at the same time because they managed to click on a second message before
    * the first reader got displayed.
    */
-  eatEventsUntilNextCard: function() {
+  eatEventsUntilNextCard: function(why) {
     this._eatingEventsUntilNextCard = true;
+    logger.log('cards.eatingEvents:begin', { why: why || 'explicit' });
   },
 
   /**
@@ -1011,6 +1021,7 @@ Cards = {
    */
   stopEatingEvents: function() {
     this._eatingEventsUntilNextCard = false;
+    logger.log('cards.eatingEvents:end', { why: 'explicit' });
   },
 
   /**

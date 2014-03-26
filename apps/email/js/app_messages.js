@@ -4,7 +4,8 @@ define(function(require) {
   var appSelf = require('app_self'),
       evt = require('evt'),
       queryString = require('query_string'),
-      queryURI = require('query_uri');
+      queryURI = require('query_uri'),
+      logger = require('loggest_tiny');
 
   var pending = {};
   // htmlCacheRestorePendingMessage defined in html_cache_restore,
@@ -44,7 +45,8 @@ define(function(require) {
       var url = sourceData.url || sourceData.URI;
 
       // To assist in bug analysis, log the start of the activity here.
-      console.log('Received activity: ' + activityName);
+      logger.log('activity', { name: activityName, type: dataType,
+                               url: url });
 
       // Dynamically load util, since it is only needed for certain
       // pathways in this module.
@@ -120,7 +122,7 @@ define(function(require) {
     // Do not listen for navigator.mozSetMessageHandler('alarm') type, that is
     // only done in the back end's cronsync for now.
   } else {
-    console.warn('Activity support disabled!');
+    logger.warn('noActivitySupport');
   }
 
   return appMessages;

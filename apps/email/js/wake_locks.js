@@ -5,6 +5,7 @@ define(function(require) {
   'use strict';
   var lockTimeouts = {},
       evt = require('evt'),
+      logger = require('loggest_tiny'),
       allLocks = {},
 
       // Using an object instead of an array since dataIDs are unique
@@ -85,9 +86,7 @@ define(function(require) {
   });
   // END failsafe close
 
-  function clearLocks(accountKey) {
-    console.log('email: clearing wake locks for "' + accountKey + '"');
-
+  function clearLocks(accountKey, why) {
     // Clear timer
     var lockTimeoutId = lockTimeouts[accountKey];
     if (lockTimeoutId) {
@@ -100,6 +99,8 @@ define(function(require) {
     allLocks[accountKey] = null;
     if (locks) {
       locks.forEach(function(lock) {
+        logger.log('wakelock:end', { accountKey: accountKey, lock: lock.topic,
+                                     why: why });
         lock.unlock();
       });
     }
@@ -112,18 +113,21 @@ define(function(require) {
   }
 
   function onCronStop(accountIds) {
-    clearLocks(makeAccountKey(accountIds));
+    clearLocks(makeAccountKey(accountIds), 'cronstop');
   }
 
   evt.on('cronSyncWakeLocks', function(accountKey, locks) {
+    locks.forEach(function(lock) {
+      logger.log('wakelock:begin', { accountKey: accountKey,
+                                     lock: lock.topic });
+    });
     if (lockTimeouts[accountKey]) {
       // Only support one set of locks. Better to err on the side of
       // saving the battery and not continue syncing vs supporting a
       // pathologic error that leads to a compound set of locks but
       // end up with more syncs completing.
-      clearLocks(accountKey);
+      clearLocks(accountKey, 'duplicate');
     }
-
     allLocks[accountKey] = locks;
 
     // If timeout is reached, means app is stuck in a bad state, and just

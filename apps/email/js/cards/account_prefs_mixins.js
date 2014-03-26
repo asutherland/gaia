@@ -6,7 +6,8 @@
 define(function(require) {
   var evt = require('evt'),
       mozL10n = require('l10n!'),
-      Cards = require('mail_common').Cards;
+      Cards = require('mail_common').Cards,
+      logger = require('loggest_tiny');
 
   /**
    * mixin properties for cards that share similar actions around the account
@@ -103,13 +104,15 @@ define(function(require) {
 
     onChangeSyncInterval: function(event) {
       var value = parseInt(event.target.value, 10);
-      console.log('sync interval changed to', value);
+      logger.log('account.settingChange', { account: this.account.id,
+                                            syncInterval: value });
       this.account.modifyAccount({ syncInterval: value });
     },
 
     onNotifyEmailClick: function(event) {
       var checked = event.target.checked;
-      console.log('notifyOnNew changed to: ' + checked);
+      logger.log('account.settingChange', { account: this.account.id,
+                                            notifyOnNew: checked });
       this.account.modifyAccount({ notifyOnNew: checked });
     },
 

@@ -68,6 +68,7 @@ var appMessages = require('app_messages'),
     evt = require('evt'),
     model = require('model'),
     headerCursor = require('header_cursor').cursor,
+    loggest = require('loggest_tiny'),
     Cards = common.Cards,
     slice = Array.prototype.slice,
     waitingForCreateAccountPrompt = false,
@@ -532,7 +533,7 @@ appMessages.on('notification', gateEntry(function(data) {
             onPushed: onPushed
         });
       } else {
-        console.error('unhandled notification type: ' + type);
+        logger.error('badNotification', { type: type });
       }
     }
 

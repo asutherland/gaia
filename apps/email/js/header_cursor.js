@@ -9,7 +9,8 @@
 define(function(require) {
   var array = require('array'),
       evt = require('evt'),
-      model = require('model');
+      model = require('model'),
+      logger = require('loggest_tiny');
 
   function makeListener(type, obj) {
     return function() {
@@ -138,9 +139,8 @@ define(function(require) {
         return this.setCurrentMessageByIndex(index);
       }
 
+      logger.error('headerCursorNoSuchSuid', { suid: messageSuid });
       if (eventIfNotFound) {
-        console.error('header_cursor could not find messageSuid ' +
-                      messageSuid + ', emitting messageSuidNotFound');
         this.emit('messageSuidNotFound', messageSuid);
       }
     },

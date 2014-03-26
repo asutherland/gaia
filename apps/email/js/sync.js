@@ -8,6 +8,7 @@ define(function(require) {
       model = require('model'),
       mozL10n = require('l10n!'),
       notificationHelper = require('shared/js/notification_helper'),
+      logger = require('loggest_tiny'),
       queryString = require('query_string'),
       Promise = require('prim'),
       newLineRegExp = /\n/g;
@@ -45,15 +46,15 @@ define(function(require) {
 
     var sendNotification;
     if (typeof Notification !== 'function') {
-      console.log('email: notifications not available');
+      logger.log('noNotificationSupport', {});
       sendNotification = function() {};
     } else {
       sendNotification = function(notificationId, title, body, iconUrl) {
-        console.log('Notification sent for ' + notificationId);
+        logger.log('notifying', { id: notificationId });
 
         if (Notification.permission !== 'granted') {
-          console.log('email: notification skipped, permission: ' +
-                      Notification.permission);
+          logger.log('notifySkipped',
+                     { permission: Notification.permission});
           return;
         }
 
@@ -80,7 +81,7 @@ define(function(require) {
     }
 
     api.oncronsyncstart = function(accountIds) {
-      console.log('email oncronsyncstart: ' + accountIds);
+      logger.log('cronsync:begin', { accountIds: accountIds });
       var accountKey = makeAccountKey(accountIds);
       waitingOnCron[accountKey] = true;
     };
@@ -209,7 +210,7 @@ define(function(require) {
           - messageSuid
      */
     api.oncronsyncstop = function(accountsResults) {
-      console.log('email oncronsyncstop: ' + accountsResults.accountIds);
+      logger.log('cronsync:end', { accountIds: accountResults.accountIds });
 
       function finishSync() {
         evt.emit('cronSyncStop', accountsResults.accountIds);
@@ -222,12 +223,10 @@ define(function(require) {
         });
 
         if (!hasBeenVisible && !stillWaiting) {
-          var msg = 'mail sync complete, closing mail app';
           if (typeof plog === 'function') {
-            plog(msg);
-          } else {
-            console.log(msg);
+            plog('mail sync complete, closing mail app');
           }
+          logger.log('closeApp', {});
 
           window.close();
         }

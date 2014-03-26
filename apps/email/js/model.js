@@ -1,12 +1,8 @@
 /*global define, console */
 'use strict';
 define(function(require) {
-  var evt = require('evt');
-
-  function dieOnFatalError(msg) {
-    console.error('FATAL:', msg);
-    throw new Error(msg);
-  }
+  var evt = require('evt'),
+      logger = require('loggest_tiny');
 
 /**
  * Provides a front end to the API and slice objects returned from the API.
@@ -254,7 +250,8 @@ define(function(require) {
 
       var folder = this.foldersSlice.getFirstFolderWithType(folderType);
       if (!folder) {
-        dieOnFatalError('We have an account without a folderType ' +
+        logger.error('missingFolderType', { type: folderType });
+        throw new Error('We have an account without a folderType ' +
                         folderType + '!', this.foldersSlice.items);
       }
 
