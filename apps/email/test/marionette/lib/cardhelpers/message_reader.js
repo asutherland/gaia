@@ -1,3 +1,4 @@
+'use strict';
 var baseCardMagic = require('./base_card_magic');
 
 function MessageReaderHelper() {
