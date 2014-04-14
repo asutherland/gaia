@@ -32,9 +32,12 @@ Rather than just having a bunch of selector strings that we put a comment above
 and then manually manipulate and investigate the state of, we declaratively
 define:
 
-- The DOM nodes on a page that are used for interaction.  Buttons.
-- The DOM nodes on a page that display feedback to the user and how to extract
-  the value from that DOM state.
+- Actions: The DOM nodes on a page that are used for interaction.
+- Displays: The DOM nodes on a page that display feedback to the user and how to
+  extract the value from that DOM state.
+- Inputs: Form/input fields.
+- Popups: The DOM nodes that may appear on/over a card and then, recursively
+  the actions/displays/inputs that may be present on that popup.
 
 This nets us the following perks:
 
@@ -64,6 +67,11 @@ This nets us the following perks:
 - Don't be flakey.  Which means making it hard to write flakey tests.
 
 - Have understandable errors provided in context.
+
+- Improve logging.  We diagnose problems reported by QA and users based on the
+  logs we are provided, so we want to make these logs as useful as possible.
+  This matters to testing because when there are many ways to do something and
+  one of them improves or solidifies our logging then we should do that one.
 
 ### Strategy ###
 

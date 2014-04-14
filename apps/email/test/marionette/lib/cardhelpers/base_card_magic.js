@@ -1,3 +1,4 @@
+'use strict';
 /**
  * Identify and characterize a UI element that can be tapped/clicked to trigger
  * some behaviour.  Always found in an object dictionary where the key is the
@@ -68,6 +69,9 @@
  *   A dictionary whose values are the names of actions and the values are
  *   `WisDOMAction` definitions.  The names are used to create the helper
  *   methods that get mixed into the base-class.
+ * @property {Object.<String, WisDOMAction>} [inputs]
+ *   A dictionary whose values are the name of form fields/inputs and the values
+ *   are definitions that identify the node in question.
  * @property {Object.<String, WisDOMDisplay} [displays]
  *   A dictionary whose values are the name of display items and the values are
  *   `WisDOMDisplay` definitions.  The names are used as the correspoding key
@@ -88,15 +92,135 @@
  * likely much faster given that we avoid a serious number of network roundtrips
  * and context switches.
  */
-function extractStateRemotedToClient(wisdef) {
+function extractState_inClientContent(root, wisdef) {
+  function process(root, wisdef) {
+    var uiState = {};
+    var name, info, elem, elemState, valueDef, invert;
+    if (wisdef.actions) {
+      for (name in wisdef.actions) {
+        info = wisdef.actions[name];
+        elem = root.querySelector(info.selector);
+        if (elem) {
+          if ('disabled' in elem) {
+            elemState = elem.disabled ? 'disabled' : 'enabled';
+          }
+          else if (elem.hasAttribute('aria-disabled')) {
+            elemState = elem.getAttribute('aria-disabled') === 'true' ?
+                          'aria-disabled' : 'aria-enabled';
+          }
+          else {
+            elemState = 'unknown';
+          }
+        }
+        else {
+          elemState = 'missing';
+        }
+        uiState[name + 'Enabled'] = elemState;
+      }
+    }
+
+    if (wisdef.inputs) {
+      for (name in wisdef.inputs) {
+        info = wisdef.inputs[name];
+        elem = root.querySelector(info.selector);
+
+        uiState[name] = elem.value;
+        uiState[name + 'Disabled'] = elem.disabled;
+      }
+    }
+
+    if (wisdef.displayed) {
+      for (name in wisdef.displays) {
+        info = wisdef.displays[name];
+        elem = root.querySelector(info.selector);
+        valueDef = info.value;
+
+        if (info.arrayOfStuff) {
+          elemState = process(elem, info.arrayOfStuff);
+        }
+        else if (valueDef === 'text') {
+          elemState = elem.textContent;
+        }
+        else {
+          invert = false;
+          if (valueDef[0] === '!') {
+            invert = true;
+            valueDef = valueDef.substring(1);
+          }
+          if (valueDef[0] === '.') {
+            elemState = elem.classList.contains(valueDef.substring(1));
+          }
+          // XXX figure out if we want to do CSS selector-ish support of
+          // equivalence testing and such here...
+          else if (valueDef[0] === '@') {
+            elemState = elem.getAttribute(valueDef.substring(1));
+          }
+          else {
+            throw new Error('Do not know what to do with: ' + valueDef);
+          }
+          if (invert) {
+            elemState = !elemState;
+          }
+        }
+
+        uiState[name] = elemState;
+      }
+    }
+  }
+  return process(root, wisdef);
 }
 
-function retrieveState
+
+function processActions(proto, actions) {
+  function processAction(name, info) {
+    proto['_tap_' + name] = function() {
+      var elem = this._domNode.findElement(info.selector);
+      elem.click();
+    };
+  }
+  for (var name in actions) {
+    processAction(name, actions[name]);
+  }
+}
 
 /**
  */
 exports.mixInWisDOM = function(opts) {
   var proto = opts.prototype;
 
-  proto.assert
+  proto._init = function(coreOpts) {
+    this._client = coreOpts.client;
+    this._domNode = coreOpts.domNode;
+  };
+
+  proto.getUIState = function() {
+    var state = this._client.executeScript(extractState_inClientContent,
+                                           [opts]);
+    return state;
+  };
+
+  /**
+   * Fill inputs by using clicks to focus inputs and then using sendKeys.  This
+   * allows us to experience:
+   * - disabled elements
+   * - special 'input' logic that does magic things.
+   */
+  proto.fillByClickingAndTyping = function(data) {
+  };
+
+  proto.assertUIState = function(desc, states) {
+
+  };
+
+  if (opts.actions) {
+    processActions(proto, opts.actions);
+  }
+  if (opts.inputs) {
+    processInputs(proto, opts.inputs);
+  }
+  if (opts.displays) {
+    processDisplays(proto, opts.displays);
+  }
+
+
 };

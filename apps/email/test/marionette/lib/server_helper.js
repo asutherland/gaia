@@ -8,21 +8,28 @@
 /**
  * Example interface for server setup.
  *
- *    var object = require('exported_module').use(options, this);
+ *    var serverAccount = require('exported_module').use(options, this);
  *
- *    // object is expected to have one or more top level server types exposed.
+ *    // details about our hypothetical person
+ *    serverAccount.displayName
+ *    serverAccount.emailAddress
  *
- *    // example imap interface
- *    object.imap.port
- *    object.imap.username
- *    object.imap.hostname
- *    object.imap.password
+ *    // general credentials
+ *    serverAccount.credentials.username
+ *    serverAccount.credentials.password
  *
- *    // example imap interface
- *    object.smtp.port
- *    object.smtp.username
- *    object.smtp.hostname
- *    object.smtp.password
+ *    // example imap or pop3 interface
+ *    serverAccount.receive.type === 'imap';
+ *    serverAccount.receive.port
+ *    serverAccount.receive.username
+ *    serverAccount.receive.hostname
+ *    serverAccount.receive.password
+ *
+ *    // example imap or pop3 interface
+ *    serverAccount.send.port
+ *    serverAccount.send.username
+ *    serverAccount.send.hostname
+ *    serverAccount.send.password
  *
  *    While the "port" may be optional (you might need a url instead)
  *    username/password should always be included.
@@ -37,13 +44,34 @@
  *      require('./lib/server_helper').use({}, this);
  *    });
  *
- * @param {Object} options for server.
+ * @param {Object} [options] for server. defaults to a sane IMAP setup.
+ * @param [options.type]
+ * @param [options.credentials]
  * @param {Object} mochaContext
  *   (usually the |this| of a marionette/suite block).
  */
 function determineServer(options, mochaContext) {
-  // XXX: right now this is hardcoded to the fake imap server logic.
-  return require('./servers/fakeimap').use(options, mochaContext);
+  if (!options) {
+    options = {
+      displayName: 'Test User',
+      emailAddress: 'testy@localhost'
+    };
+  }
+
+  if (!options.credentials) {
+    options.credentials = {
+      username: 'testy',
+      password: 'testy'
+    };
+  }
+
+  // if you don't care, you get IMAP.
+  if (!options.type) {
+    options.type = 'imap';
+  }
+
+  // We only support the mail-fakeservers family of fake servers right now.
+  return require('./servers/fakemail').use(options, mochaContext);
 }
 
 module.exports.use = determineServer;

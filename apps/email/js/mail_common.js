@@ -783,6 +783,11 @@ Cards = {
     var endNode = this._cardStack[cardIndex].domNode;
     var isForward = navDirection === 'forward';
 
+    logger.log('cards.show:begin',
+               { name: cardInst.cardDef.name, mode: cardInst.modeDef.name,
+                 index: cardIndex, curIndex: this.activeCardIndex,
+                 method: showMethod });
+
     if (this._cardStack.length === 1) {
       // Reset zIndex so that it does not grow ever higher when all but
       // one card are removed
@@ -878,10 +883,14 @@ Cards = {
       removeClass(endNode, 'no-anim');
 
       this._onCardVisible(cardInst);
+
+      logger.log('cards.show:complete',
+                 { name: cardInst.cardDef.name, mode: cardInst.modeDef.name,
+                   index: cardIndex });
     }
 
     // Hide toaster while active card index changed:
-    Toaster.hide();
+    Toaster.hide('card-changed');
 
     this.activeCardIndex = cardIndex;
     if (cardInst)
@@ -941,6 +950,11 @@ Cards = {
       }
 
       this._onCardVisible(activeCard);
+
+      logger.log('cards.show:complete',
+                 { name: activeCard.cardDef.name, mode: activeCard.modeDef.name,
+                   index: this.activeCardIndex });
+
 
       // If the card has next cards that can be preloaded, load them now.
       // Use of nextCards should be balanced with startup performance.

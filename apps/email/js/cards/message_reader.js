@@ -20,6 +20,7 @@ var MimeMapper,
     Marquee = require('marquee'),
     mozL10n = require('l10n!'),
     queryURI = require('query_uri'),
+    logger = require('loggest_tiny'),
 
     Cards = common.Cards,
     ConfirmDialog = common.ConfirmDialog,
@@ -125,6 +126,8 @@ MessageReaderCard.prototype = {
   _on: function(className, eventName, method, skipProtection) {
     this.domNode.getElementsByClassName(className)[0]
     .addEventListener(eventName, function(evt) {
+      logger.log('reader.click',
+                 { headerPresent: !!this.header });
       if (this.header || skipProtection)
         return this[method](evt);
     }.bind(this), false);
@@ -135,8 +138,10 @@ MessageReaderCard.prototype = {
     this.hackMutationHeader = header;
 
     // - mark message read (if it is not already)
-    if (!this.header.isRead)
+    if (!this.header.isRead) {
+      logger.log('reader.autoRead', {});
       this.header.setRead(true);
+    }
 
     this.domNode.getElementsByClassName('msg-star-btn')[0].classList
         .toggle('msg-star-btn-on', this.hackMutationHeader.isStarred);
@@ -332,6 +337,8 @@ MessageReaderCard.prototype = {
     // reply menu selection handling
     var formSubmit = (function(evt) {
       document.body.removeChild(contents);
+      logger.log('reader.replyChoice',
+                 { choice: evt.explicitOriginalTarget.className });
       switch (evt.explicitOriginalTarget.className) {
       case 'msg-reply-menu-reply':
         this.reply();
@@ -356,11 +363,13 @@ MessageReaderCard.prototype = {
   },
 
   onDelete: function() {
+    logger.log('reader.deleteConfirm', {});
     var dialog = msgDeleteConfirmNode.cloneNode(true);
     ConfirmDialog.show(dialog,
       { // Confirm
         id: 'msg-delete-ok',
         handler: function() {
+          logger.log('reader.delete', {});
           var op = this.header.deleteMessage();
           Cards.removeCardAndSuccessors(this.domNode, 'animate');
           Toaster.toastOperation(op);
@@ -368,7 +377,9 @@ MessageReaderCard.prototype = {
       },
       { // Cancel
         id: 'msg-delete-cancel',
-        handler: null
+        handler: function() {
+          logger.log('reader.deleteAbort', {});
+        }
       }
     );
   },
@@ -379,12 +390,15 @@ MessageReaderCard.prototype = {
                             !this.hackMutationHeader.isStarred);
 
     this.hackMutationHeader.isStarred = !this.hackMutationHeader.isStarred;
+    logger.log('reader.toggleStar',
+               { beStarred: this.hackMutationHeader.isStarred });
     this.header.setStarred(this.hackMutationHeader.isStarred);
   },
 
   onMove: function() {
-    //TODO: Please verify move functionality after api landed.
+    logger.log('reader.movePrompt', {});
     Cards.folderSelector(function(folder) {
+      logger.log('reader.move', { censorPath: folder.path });
       var op = this.header.moveMessage(folder);
       Cards.removeCardAndSuccessors(this.domNode, 'animate');
       Toaster.toastOperation(op);

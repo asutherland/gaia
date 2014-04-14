@@ -3,85 +3,9 @@
 function EmailApp(client) {
   this.client = client.scope({ searchTimeout: 20000 });
 }
-module.exports = Email;
+module.exports = EmailApp;
 
 EmailApp.EMAIL_ORIGIN = 'app://email.gaiamobile.org';
-
-var Selector = {
-  setupNameInput: '.card-setup-account-info .sup-info-name',
-  setupEmailInput: '.card-setup-account-info .sup-info-email',
-  setupPasswordInput: '.card-setup-account-info .sup-info-password',
-  nextButton: '.card-setup-account-info .sup-info-next-btn',
-  prefsNextButton: '.card-setup-account-prefs .sup-info-next-btn',
-  manualSetupNameInput: '.sup-manual-form .sup-info-name',
-  manualSetupEmailInput: '.sup-manual-form .sup-info-email',
-  manualSetupImapPasswordInput:
-    '.sup-manual-form .sup-manual-composite-password',
-  manualSetupImapUsernameInput:
-    '.sup-manual-form .sup-manual-composite-username',
-  manualSetupImapHostnameInput:
-    '.sup-manual-form .sup-manual-composite-hostname',
-  manualSetupImapPortInput: '.sup-manual-form .sup-manual-composite-port',
-  manualSetupImapSocket: '.sup-manual-form .sup-manual-composite-socket',
-  manualSetupSmtpUsernameInput: '.sup-manual-form .sup-manual-smtp-username',
-  manualSetupSmtpHostnameInput: '.sup-manual-form .sup-manual-smtp-hostname',
-  manualSetupSmtpPasswordInput: '.sup-manual-form .sup-manual-smtp-password',
-  manualSetupSmtpPortInput: '.sup-manual-form .sup-manual-smtp-port',
-  manualSetupSmtpSocket: '.sup-manual-form .sup-manual-smtp-socket',
-  manualNextButton: '.card-setup-manual-config .sup-manual-next-btn',
-  msgDownBtn: '.card-message-reader .msg-down-btn',
-  msgListScrollOuter: '.card-message-list .msg-list-scrollouter',
-  editMode: '.card-message-list .msg-edit-btn',
-  editModeCheckBoxes:
-    '.card-message-list .msg-header-item[data-index="0"] label.pack-checkbox',
-  editModeTrash: '.card-message-list button.msg-delete-btn',
-  msgUpBtn: '.card-message-reader .msg-up-btn',
-  msgEnvelopeSubject: '.card-message-reader .msg-envelope-subject',
-  showMailButton: '.card-setup-done .sup-show-mail-btn',
-  confirmDialogOkButton: '.confirm-dialog-form .confirm-dialog-ok',
-  manualConfigButton: '.scrollregion-below-header .sup-manual-config-btn',
-  composeButton: '.msg-list-header .msg-compose-btn',
-  composeEmailContainer: '.card-compose .cmp-to-container',
-  composeEmailInput: '.card-compose .cmp-addr-text',
-  composeSubjectInput: '.card-compose .cmp-subject-text',
-  composeBodyInput: '.card-compose .cmp-body-text',
-  composeSendButton: '.card-compose .cmp-send-btn',
-  composeBackButton: '.card-compose .cmp-back-btn',
-  composeDraftDiscard: '#cmp-draft-discard',
-  composeDraftSave: '#cmp-draft-save',
-  composeErrorMessage: '.card-compose .cmp-error-message',
-  refreshButton: '.card.center .msg-refresh-btn',
-  messageHeaderItem:
-  '.msg-messages-container .msg-header-item',
-  cardMessageReader: '.card-message-reader',
-  currentCardInputs: '.card.center input[type="text"]',
-  replyMenuButton: '.msg-reply-btn',
-  replyMenu: '.msg-reply-menu',
-  replyMenuReply: '.msg-reply-menu-reply',
-  replyMenuForward: '.msg-reply-menu-forward',
-  replyMenuAll: '.msg-reply-menu-reply-all',
-  searchTextTease: '.msg-search-text-tease',
-  searchCard: '.card[data-mode="search"]',
-  folderListButton: '.msg-list-header .msg-folder-list-btn',
-  folderListCloseButton: '.card-folder-picker .fld-header-back',
-  folderListContents: '.card-folder-picker .fld-acct-scrollinner',
-  settingsButton: '.fld-nav-toolbar',
-  settingsDoneButton: '.card-settings-main [data-l10n-id="settings-done"]',
-  addAccountButton: '.card-settings-main .tng-account-add',
-  accountListButton: '.fld-acct-header',
-  accountListContainer: '.fld-accountlist-container',
-  settingsMainAccountItems: '.tng-accounts-container .tng-account-item',
-  syncIntervalSelect: '.tng-account-check-interval ',
-  // Checkboxes are weird: hidden to marionette, but the associated label
-  // is clickable and does the job.
-  notifyEmailCheckbox: '.tng-notify-mail-label',
-  accountSettingsBackButton: '.card-settings-account .tng-back-btn',
-  localDraftsItem: '.fld-folders-container a[data-type=localdrafts]',
-  outboxItem: '.fld-folders-container a[data-type=outbox]',
-  outboxItemSyncIcon: '.msg-header-syncing-section',
-  msgLastSync: '.msg-last-synced-value',
-  toaster: 'section[role="status"]'
-};
 
 EmailApp.prototype = {
   /**
@@ -103,21 +27,22 @@ EmailApp.prototype = {
    * card.
    *
    * @param {AccountInfo|"manual"|false} opts.setupAccount
-   *   If an `AccountInfo` object is provided we will say yes at the prompt and
-   *   configure the given account for you using the settings provided in the
-   *   `accountOptions` if also provided.  We will leave you on the message list
-   *   for the account's new Inbox, returning a `MessageListHelper` for it.
+   *   If an `AccountInfo` object is provided we will configure the given
+   *   account for you using the settings provided in the `accountOptions` if
+   *   also provided.  We will leave you on the message list for the account's
+   *   new Inbox, returning a `MessageListHelper` for it.
    *
-   *   If "manual" is provided, then we will say yes at the prompt and leave you
-   *   on the setup_account_info card, returning a `SetupAccountInfoHelper` for
-   *   it.
+   *   If "manual" is provided, then we will leave you on the setup_account_info
+   *   card, returning a `SetupAccountInfoHelper` for it.
    * @param {AccountSetupOptions} [opts.accountOptions]
    *   Tells us what options to pick on the setup_account_prefs card.  If not
    *   provided, we will not set anything and leave the defaults on.
    *
    * @return {MessageListHelper|SetupAccountInfoHelper}
    */
-  launchExpectingAccountSetup: function() {
+  launchExpectingAccountSetup: function(opts) {
+    this._launch();
+
   },
 
   /**

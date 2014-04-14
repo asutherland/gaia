@@ -62,17 +62,6 @@
  **/
 
 marionette('email', function() {
-  var app;
-
-  var client = marionette.client({
-    settings: {
-      // disable keyboard ftu because it blocks our display
-      'keyboard.ftu.enabled': false
-    }
-  });
-
-  var server = serverHelper.use(null, this);
-
   test('cronsync', function() {
   });
 });

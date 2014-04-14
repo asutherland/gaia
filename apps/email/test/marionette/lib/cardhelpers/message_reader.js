@@ -1,14 +1,61 @@
 'use strict';
 var baseCardMagic = require('./base_card_magic');
 
-function MessageReaderHelper() {
+function MessageReaderHelper(coreOpts) {
+  this._init(coreOpts);
 }
 MessageReaderHelper.prototype = {
 
   advanceUp: function(desc, opts) {
+    this.tap_msgUp();
   },
 
   advanceDown: function(desc, opts) {
+    this.tap_msgDown();
+  },
+
+  /**
+   * Assert the given synthetic message is displayed.  This lives in a helper
+   * because it's pretty verbose to type this out yourself every time.
+   *
+   * NB: This currently assumes no one involved in the message is a contact.
+   * Contacts impact display names and some type of enhancement will be required
+   * to support that.
+   *
+   * NB: We also currently ignore the body
+   */
+  assertMessageDisplayed: function(desc, synMsg) {
+    function transformRecipientList(list) {
+      // may be undefined
+      if (!list) {
+        return [];
+      }
+
+      return list.map(function(nameAndAddress) {
+        if (nameAndAddress.name) {
+          return {
+            displayed: nameAndAddress.name,
+            addressIsDisplayed: false
+          };
+        }
+        else {
+          return {
+            displayed: nameAndAddress.address,
+            addressIsDisplayed: true
+          };
+        }
+      });
+    }
+
+    this.assertUIState(
+      desc,
+      {
+        authorDisplayName: synMsg.fromName || synMsg.fromAddress,
+        authorMailAddress: synMsg.fromAddress,
+        to: transformRecipientList(synMsg.to),
+        cc: transformRecipientList(synMsg.cc),
+        subject: synMsg.subject
+      });
   },
 
   /**
@@ -88,6 +135,16 @@ baseCardMagic.mixInWisDOM({
       selector: '.msg-envelope-to-line',
       arrayOfStuff: peepDisplayTemplate
     },
+    cc: {
+      desc: 'the cc recipients',
+      selector: '.msg-envelope-cc-line',
+      arrayOfStuff: peepDisplayTemplate
+    },
+    bcc: {
+      desc: 'the bcc recipients',
+      selector: '.msg-envelope-bcc-line',
+      arrayOfStuff: peepDisplayTemplate
+    },
     subject: {
       desc: 'message subject',
       selector: 'msg-envelope-subject-container',
@@ -117,3 +174,5 @@ baseCardMagic.mixInWisDOM({
     }
   }
 });
+
+module.exports = MessageReaderHelper;

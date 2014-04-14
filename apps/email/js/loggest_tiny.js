@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * Bare-bones non-hierarchical logger, currently specialized for the e-mail
  * app main thread, extremely so.
@@ -17,7 +19,8 @@ Loggest.prototype = {
    * clobbered/hooked by unit tests or similar.
    */
   _out: function(eventStr, pretty) {
-    dump(pretty + 'EIA' + eventStr + '\x1b[0m\n');
+    //dump(pretty + 'EIA' + eventStr + '\x1b[0m\n');
+    console.log(eventStr);
   },
 
   _log: function(pretty, level, what, details) {

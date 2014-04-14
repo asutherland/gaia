@@ -1,11 +1,11 @@
 'use strict';
 var baseCardMagic = require('./base_card_magic');
 
-function MessageListHelper() {
+function MessageListHelper(coreOpts) {
+  this._init(coreOpts);
 }
 MessageListHelper.prototype = {
-  //////////////////////////////////////////////////////////////////////////////
-  //
+
 
   //////////////////////////////////////////////////////////////////////////////
   // Scrolling, Visibility
@@ -58,17 +58,34 @@ MessageListHelper.prototype = {
    */
   getMaxVisibleMessageCount: function() {
   },
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Display a Message
+
+  readEmail: function(desc, whichOne) {
+    this._logAction(desc);
+    this._cards.waitForAndWrapNewCard({
+        type: 'message_reader',
+        waitForLog: 'reader.buildBodyDom',
+        waitForLogDetails: { haveAllBodies: true }
+      });
+  },
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Batch Edit Mode
+
+  //////////////////////////////////////////////////////////////////////////////
 };
 
-baseCardMagic.mixInSelectors(
-  MessageListHelper.prototype,
-  [
-    {
+baseCardMagic.mixInSelectors({
+  prototype: MessageListHelper.prototype,
+  actions: {
+    notificationBar: {
       name: 'notificationBar',
       desc: 'blue in-app notification bar for new messages',
       selector: '.msg-list-topbar',
     },
-    {
-    }
-  ])
-;
+  }
+});
+
+module.exports = MessageListHelper;
