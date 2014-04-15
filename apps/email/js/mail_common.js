@@ -590,7 +590,7 @@ Cards = {
     var cardIndex = this._findCard(query),
         cardInst = this._cardStack[cardIndex];
     if (!('told' in cardInst.cardImpl)) {
-      logger.error('badTell', { query: query, what: what });
+      logger.error('cards.badTell', { query: query, what: what });
     }
     else {
       cardInst.cardImpl.told(what);
@@ -673,10 +673,15 @@ Cards = {
    */
   removeCardAndSuccessors: function(cardDomNode, showMethod, numCards,
                                     nextCardSpec, skipDefault) {
+    logger.log('cards.removeCardAndSuccessors',
+               { curCount: this._cardStack.length,
+                 toRemove: numCards || 'all',
+                 method: showMethod });
     if (!this._cardStack.length)
       return;
 
     if (cardDomNode && this._cardStack.length === 1 && !skipDefault) {
+      logger.log('cards.removeCardAndSuccessors:pushDefaultCard', {});
       // No card to go to when done, so ask for a default
       // card and continue work once it exists.
       return Cards.pushDefaultCard(function() {
@@ -735,11 +740,14 @@ Cards = {
                           firstIndex, numCards);
     for (iCard = 0; iCard < deadCardInsts.length; iCard++) {
       cardInst = deadCardInsts[iCard];
+      logger.log('cards.killing',
+                 { index: iCard, type: cardInst.cardDef.name,
+                   mode: cardInst.modeDef.name, method: showMethod });
       try {
         cardInst.cardImpl.die();
       }
       catch (ex) {
-        logger.warn('cardDieProblem', { ex: ex, stack: ex.stack });
+        logger.warn('cards.cardDieProblem', { ex: ex, stack: ex.stack });
       }
       switch (showMethod) {
         case 'animate':
@@ -784,7 +792,7 @@ Cards = {
     var isForward = navDirection === 'forward';
 
     logger.log('cards.show:begin',
-               { name: cardInst.cardDef.name, mode: cardInst.modeDef.name,
+               { type: cardInst.cardDef.name, mode: cardInst.modeDef.name,
                  index: cardIndex, curIndex: this.activeCardIndex,
                  method: showMethod });
 
@@ -885,7 +893,7 @@ Cards = {
       this._onCardVisible(cardInst);
 
       logger.log('cards.show:complete',
-                 { name: cardInst.cardDef.name, mode: cardInst.modeDef.name,
+                 { type: cardInst.cardDef.name, mode: cardInst.modeDef.name,
                    index: cardIndex });
     }
 
@@ -952,7 +960,7 @@ Cards = {
       this._onCardVisible(activeCard);
 
       logger.log('cards.show:complete',
-                 { name: activeCard.cardDef.name, mode: activeCard.modeDef.name,
+                 { type: activeCard.cardDef.name, mode: activeCard.modeDef.name,
                    index: this.activeCardIndex });
 
 

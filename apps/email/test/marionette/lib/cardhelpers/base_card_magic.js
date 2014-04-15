@@ -84,6 +84,8 @@
  *   This also lets us provide a convenience helper for using the popup.
  */
 
+var assert = require('assert');
+
 /**
  * This function is run in the client context to extract state from the DOM
  * given a `WisDOMDef`.  While the same thing could be done by using the
@@ -183,15 +185,38 @@ function processActions(proto, actions) {
   }
 }
 
+function processInputs(proto, actions) {
+  function processInput(name, info) {
+  }
+  for (var name in actions) {
+    processInput(name, actions[name]);
+  }
+}
+
+function processDisplays(proto, actions) {
+  function processDisplay(name, info) {
+  }
+  for (var name in actions) {
+    processDisplay(name, actions[name]);
+  }
+}
+
+
 /**
  */
 exports.mixInWisDOM = function(opts) {
   var proto = opts.prototype;
+  proto.cardName = opts.cardName;
 
   proto._init = function(coreOpts) {
     this._client = coreOpts.client;
+    this._helpers = coreOpts.helpers;
     this._domNode = coreOpts.domNode;
   };
+
+  this._logTestAction = function(description) {
+    this._helpers.log.logTestAction(description);
+  },
 
   proto.getUIState = function() {
     var state = this._client.executeScript(extractState_inClientContent,
@@ -203,13 +228,55 @@ exports.mixInWisDOM = function(opts) {
    * Fill inputs by using clicks to focus inputs and then using sendKeys.  This
    * allows us to experience:
    * - disabled elements
-   * - special 'input' logic that does magic things.
+   * - special 'input' logic that does magic things.  (For example, the e-mail
+   *   compose card's bubble handling.)
+   *
+   * Currently we fake <select> handling by poking the .value of the select
+   * directly.  The rationale for this right now is that <select> is boring, a
+   * hassle, and has not been the cause of any (non-test) regressions.  clock's
+   * mquery has a good implementation for it and we should get that
+   * implementation uplifted into marionette-plugin-forms and then switch to
+   * using that more.
    */
-  proto.fillByClickingAndTyping = function(data) {
+  proto.fillByClickingAndTyping = function(desc, data) {
+    this._logTestAction(desc);
+    for (var key in data) {
+      var fillValue = data[key];
+      var inputInfo = opts.inputs[key];
+      if (!inputInfo) {
+        throw new Error('No input defined for "' + key + '"');
+      }
+
+      var elem = this._domNode.findElement(inputInfo.selector);
+      var tagName = elem.tagName();
+      switch (tagName) {
+        case 'input':
+          // NB: There are a crapload of subtypes that would require
+          // special-handling, like range.  We just don't deal with those right
+          // now, but again marionette-plugin-forms is largely the right place
+          // for those.  But for now, we assume we can type in the field.
+          elem.sendKeys(fillValue);
+          break;
+
+        case 'select':
+          this._client.executeScript(function(elem, value) {
+            elem.value = value;
+          }, [elem, fillValue]);
+          break;
+
+        default:
+          throw new Error('Unsupported input tag name: ' + tagName);
+      }
+    }
   };
 
-  proto.assertUIState = function(desc, states) {
-
+  proto.assertUIState = function(desc, expectedState) {
+    var actualState = this.getUIState();
+    try {
+      assert.deepEqual(actualState, expectedState);
+    }
+    catch (ex) {
+    }
   };
 
   if (opts.actions) {

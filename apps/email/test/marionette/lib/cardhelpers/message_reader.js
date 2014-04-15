@@ -83,6 +83,7 @@ var peepDisplayTemplate = {
 
 baseCardMagic.mixInWisDOM({
   prototype: MessageReaderHelper.prototype,
+  type: 'message_reader',
   actions: {
     back: {
       desc: 'back arrow to close the message reader',

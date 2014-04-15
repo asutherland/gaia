@@ -8,6 +8,7 @@
 var fs = require('fs');
 var path = require('path');
 var xRecorder = require('x-recorder');
+var EventEmitter = require('events').EventEmitter;
 
 /**
  * Return true if our target is (local) b2g-desktop and we have xvfb and ffmpeg
@@ -160,7 +161,12 @@ exports.recordedMarionetteClient = function() {
       { flags: 'w', encoding: 'utf8', mode: /* 0o666 */ 483 });
 
     client.logger.on('message', function(msg) {
-      logStream.write(JSON.stringify(msg) + '\n');
+      var logObj = {
+        source: 'client',
+        type: 'log',
+        msg: msg
+      };
+      logStream.write(JSON.stringify(logObj) + '\n');
     });
 
     xcapture = new xRecorder.XCapture({
@@ -173,17 +179,43 @@ exports.recordedMarionetteClient = function() {
     });
   });
 
+
   // Fetch the logs before we shut down the host.
-  teardown(function(done) {
+  teardown(function() {
     client.logger.grabLogMessages();
   });
 
+  // Investigate failures and log state.
+  teardown(function() {
+    if (this.currentTest.state !== 'failed') {
+      return;
+    }
+
+    var failureDetails = {};
+    client.emit('fill-in-failure-details', failureDetails);
+    var failureLog = {
+      source: 'test',
+      type: 'failureLog',
+      details: failureDetails
+    };
+    client.recorderHelper.logObj(failureLog);
+  });
+
   var client = marionette.client(profileSettings);
+  // Disable the default script timeout which logs data-URI screenshots.
+  client.onScriptTimeout = null;
+  client.recorderHelper = new EventEmitter();
+  client.recorderHelper.logObj = function(obj) {
+    if (logStream) {
+      logStream.write(JSON.stringify(obj) + '\n');
+    }
+  };
 
   // But we want to stop recording after the host gets torn down.
   teardown(function(done) {
     xcapture.stop(function() {
       logStream.end(function() {
+        logStream = null;
         done();
       });
     });

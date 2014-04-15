@@ -166,7 +166,7 @@ MessageReaderCard.prototype = {
     }
   },
 
-  handleBodyChange: function(evt) {
+  handleBodyChange: function(evt, body) {
     this.buildBodyDom(evt.changeDetails);
   },
 
@@ -833,6 +833,9 @@ MessageReaderCard.prototype = {
    * @param {array} changeDetails.attachments An array of changed item indexes.
    */
   buildBodyDom: function(/* optional */ changeDetails) {
+    logger.log('reader.buildBodyDom',
+               { firstTime: !this._builtBodyDom,
+                 haveAllBodies: this.body.bodyRepsDownloaded });
     var body = this.body,
         domNode = this.domNode,
         rootBodyNode = this.rootBodyNode,

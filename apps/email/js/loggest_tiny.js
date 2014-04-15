@@ -3,6 +3,21 @@
 /**
  * Bare-bones non-hierarchical logger, currently specialized for the e-mail
  * app main thread, extremely so.
+ *
+ * Note that this is an interim logging format.  The canonical Mozilla
+ * structured logging standard (for test harnesses) is documented at
+ * http://mozbase.readthedocs.org/en/latest/mozlog_structured.html.
+ *
+ * We don't conform to that right now since we're not a test harness and we're
+ * trying to:
+ * - have our output be somewhat human readable
+ * - keep things terse; our logs go into a circular buffer either way, so it
+ *   does pay to try and be at least a little conservative, especially if the
+ *   buffer is not compressed.
+ *
+ * The 'EIA' magic marker is an inherently versioned marker for use only by this
+ * version of the e-mail app.  Nothing else should crib us, and we should change
+ * the string as appropriate.
  **/
 
 define(function(require) {
@@ -20,7 +35,7 @@ Loggest.prototype = {
    */
   _out: function(eventStr, pretty) {
     //dump(pretty + 'EIA' + eventStr + '\x1b[0m\n');
-    console.log(eventStr);
+    console.log('EIA' + eventStr);
   },
 
   _log: function(pretty, level, what, details) {

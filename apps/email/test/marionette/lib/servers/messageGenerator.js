@@ -1,8 +1,7 @@
-'use strict';
-
 /* This code was originally written for Thunderbird, migrated to
  * gaia-email-libs-and-more, and now is here in gaia.  It was developed by
  * Mozilla Messaging and so is fully able to be relicensed to Gaia's license.
+ *
  */
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {

@@ -5,7 +5,15 @@ function MessageListHelper(coreOpts) {
   this._init(coreOpts);
 }
 MessageListHelper.prototype = {
+  //////////////////////////////////////////////////////////////////////////////
+  // Folder Navigation
 
+  switchToAccountInbox: function(serverAccount) {
+  },
+
+  switchToFolder: function(folderSpec) {
+    throw new Error('Welcome to the commons; implement me!');
+  },
 
   //////////////////////////////////////////////////////////////////////////////
   // Scrolling, Visibility
@@ -15,6 +23,7 @@ MessageListHelper.prototype = {
    * avoiding scrolling the search box into view.
    */
   scrollToTopMessage: function() {
+    throw new Error('Welcome to the commons; implement me!');
   },
 
   /**
@@ -22,12 +31,14 @@ MessageListHelper.prototype = {
    * area.
    */
   scrollToBottomMessage: function() {
+    throw new Error('Welcome to the commons; implement me!');
   },
 
   /**
    * Scroll so that the given message is fully visible
    */
   scrollMessageIntoView: function(message) {
+    throw new Error('Welcome to the commons; implement me!');
   },
 
   /**
@@ -38,6 +49,7 @@ MessageListHelper.prototype = {
    * are our message.
    */
   assertMessageVisible: function() {
+    throw new Error('Welcome to the commons; implement me!');
   },
 
   /**
@@ -48,6 +60,7 @@ MessageListHelper.prototype = {
    * are our message.
    */
   assertMessageNotVisible: function() {
+    throw new Error('Welcome to the commons; implement me!');
   },
 
   /**
@@ -57,17 +70,18 @@ MessageListHelper.prototype = {
    * scrolling.
    */
   getMaxVisibleMessageCount: function() {
+    throw new Error('Welcome to the commons; implement me!');
   },
 
   //////////////////////////////////////////////////////////////////////////////
   // Display a Message
 
   readEmail: function(desc, whichOne) {
-    this._logAction(desc);
+    this._logTestAction(desc);
+
     this._cards.waitForAndWrapNewCard({
         type: 'message_reader',
-        waitForLog: 'reader.buildBodyDom',
-        waitForLogDetails: { haveAllBodies: true }
+        waitForLog: { w: 'reader.buildBodyDom', haveAllBodies: true },
       });
   },
 

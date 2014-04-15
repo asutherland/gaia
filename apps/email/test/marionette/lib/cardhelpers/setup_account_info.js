@@ -8,22 +8,54 @@ function SetupAccountInfoHelper(client) {
 }
 SetupAccountInfoHelper.prototype = {
   /**
-   * Fill out the fields
+   * Fill out the fields, and either succeed and find ourselves on a
+   * setup_account_prefs card, or fail and find ourselves back on this card.
+   *
+   * @param {Object} opts
+   * @param {AccountInfo} opts.serverAccount
+   * @param {Boolean} opts.expectSuccess
    */
-  setupAccount: function(serverAccount) {
-    this.formFill({
-      name: serverAccount.displayName,
-      email: serverAccount.emailAddress,
-      password: serverAccount.credentials.password
-    });
+  setupAccount: function(opts) {
+    var serverAccount = opts.serverAccount;
 
+    this.fillByClickingAndTyping(
+      'enter autoconfig details',
+      {
+        name: serverAccount.displayName,
+        email: serverAccount.emailAddress,
+        password: serverAccount.credentials.password
+      });
+
+    // This will cause the tryToCreateAccount call be saved off and not actually
+    // called yet.  Since the call is actually made on the progress card, this
+    // lets us predictably control when the stupid card appears and disappears.
     autoconfigHack.prepareFakeAutoconfig(this._client, {
       type: serverAccount.receive.type + '+smtp',
       incoming: serverAccount.receive,
       outgoing: serverAccount.send
     });
 
-    this.tapNext();
+    this._logTestAction('hit next to initiate autoconfig');
+    this._tap_next();
+
+    var setupProgress = this._helpers.card.waitForAndWrapNewCard({
+      type: 'setup_progress'
+    });
+
+    // now let the account creation happen
+    this._logTestAction('releasing autoconfig');
+    autoconfigHack.releaseFakeAutoconfig(this._client);
+
+    if (!opts.expectSuccess) {
+      // wait for the progress card to disappear, returning us to ourselves.
+      this._helpers.card.waitForCardToBeRemovedAndUsToReturnTo({
+        removed: setupProgress,
+        returnTo: this
+      });
+      return null;
+    }
+
+
   }
 };
 
@@ -53,6 +85,23 @@ baseCardMagic.mixInWisDOM({
     password: {
       desc: 'password',
       selector: '.sup-info-password'
+    }
+  },
+  display: {
+    errorDisplayed: {
+      desc: 'collapsible region visible when a setup error occurs',
+      selector: '.sup-error-region',
+      value: '!.collapsed'
+    },
+    errorMessage: {
+      desc: 'the localized human-readable error message',
+      selector: '.sup-error-message',
+      value: 'text'
+    },
+    errorCode: {
+      desc: 'the machine-friendly error code',
+      selector: 'sup-error-code',
+      value: 'text'
     }
   }
 });
