@@ -5950,6 +5950,21 @@ function FolderStorage(account, folderId, persistedFolderInfo, dbConn,
 }
 exports.FolderStorage = FolderStorage;
 FolderStorage.prototype = {
+  reportBlockUsage: function(why) {
+    var headerBytes = 0, bodyBytes = 0;
+    this._loadedHeaderBlockInfos.forEach(function (hb) {
+      headerBytes += hb.estSize;
+    });
+    this._loadedBodyBlockInfos.forEach(function (bb) {
+      bodyBytes += bb.estSize;
+    });
+    console.log('post', why, 'blocks. header:',
+                this._loadedHeaderBlockInfos.length,
+                '(' + headerBytes + ' bytes)',
+                'body:', this._loadedBodyBlockInfos.length,
+                '(' + bodyBytes + ' bytes)');
+  },
+
   get hasActiveSlices() {
     return this._slices.length > 0;
   },
@@ -6382,6 +6397,7 @@ FolderStorage.prototype = {
     maybeDiscard(
       'body', this._bodyBlockInfos, this._loadedBodyBlockInfos,
       this._bodyBlocks, this._dirtyBodyBlocks);
+    this.reportBlockUsage('flush');
   },
 
   /**
@@ -7092,6 +7108,7 @@ FolderStorage.prototype = {
         catch (ex) {
           self._LOG.callbackErr(ex);
         }
+        self.reportBlockUsage('load:' + type);
       }
 
       if (self._pendingLoads.length === 0)
@@ -7581,6 +7598,7 @@ FolderStorage.prototype = {
   sliceShrunk: function fs_sliceShrunk(slice) {
     if (this._mutexQueue.length === 0)
       this.flushExcessCachedBlocks('shrunk');
+    this.reportBlockUsage('shrunk');
   },
 
   /**
@@ -8665,6 +8683,7 @@ FolderStorage.prototype = {
     this._insertIntoBlockUsingDateAndUID(
       'header', header.date, header.id, header.srvid,
       $sync.HEADER_EST_SIZE_IN_BYTES, header, callback);
+    this.reportBlockUsage('addHeader');
   },
 
   /**
@@ -8743,6 +8762,7 @@ FolderStorage.prototype = {
       }
       if (callback)
         callback();
+      self.reportBlockUsage('updateHeader');
     }
     if (!info) {
       if (headerOrMutationFunc instanceof Function)
@@ -8862,6 +8882,7 @@ FolderStorage.prototype = {
       delete this._serverIdHeaderBlockMapping[header.srvid];
 
     this._deleteFromBlock('header', header.date, header.id, callback);
+    this.reportBlockUsage('deleteMessageHeader');
   },
 
   deleteMessageHeaderAndBodyUsingHeader: function(header, callback) {
@@ -8872,6 +8893,7 @@ FolderStorage.prototype = {
     }
     this.deleteMessageHeaderUsingHeader(header, function() {
       this._deleteFromBlock('body', header.date, header.id, callback);
+      this.reportBlockUsage('deleteMessageBody');
     }.bind(this));
   },
 
@@ -9010,6 +9032,7 @@ FolderStorage.prototype = {
     this._insertIntoBlockUsingDateAndUID(
       'body', header.date, header.id, header.srvid, bodyInfo.size, bodyInfo,
       callback);
+    this.reportBlockUsage('addMessageBody');
   },
 
   /**
@@ -9079,6 +9102,7 @@ FolderStorage.prototype = {
           catch (ex) {
             self._LOG.callbackErr(ex);
           }
+          self.reportBlockUsage('getBodyLoad');
         });
       return;
     }
@@ -9214,6 +9238,7 @@ FolderStorage.prototype = {
       else {
         performNotifications();
       }
+      self.reportBlockUsage('updateMessageBody');
     }
 
     function performNotifications(refreshedBody) {
