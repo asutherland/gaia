@@ -1,3 +1,4 @@
+/*jshint node: true, browser: true */
 'use strict';
 
 /**
@@ -74,3 +75,5 @@ LogHelper.logTestAction = function(description) {
     });
   }
 };
+
+module.exports = LogHelper;

@@ -1,4 +1,6 @@
+/*jshint node: true, browser: true */
 'use strict';
+
 /**
  * Identify and characterize a UI element that can be tapped/clicked to trigger
  * some behaviour.  Always found in an object dictionary where the key is the
@@ -201,17 +203,26 @@ function processDisplays(proto, actions) {
   }
 }
 
+var requiredAttrs = ['prototype', 'type', 'selector'];
 
 /**
  */
 exports.mixInWisDOM = function(opts) {
+  // Helpful exploding "you forgot/typo'd this attribute, dummy!"
+  for (var iAttr = 0; iAttr < requiredAttrs.length; iAttr++) {
+    if (!(requiredAttrs[iAttr] in opts)) {
+      throw new Error('Definition missing attribute: ' + requiredAttrs[iAttr]);
+    }
+  }
+
   var proto = opts.prototype;
-  proto.cardName = opts.cardName;
+  proto.type = opts.type;
 
   proto._init = function(coreOpts) {
     this._client = coreOpts.client;
     this._helpers = coreOpts.helpers;
     this._domNode = coreOpts.domNode;
+    this.mode = coreOpts.mode;
   };
 
   this._logTestAction = function(description) {

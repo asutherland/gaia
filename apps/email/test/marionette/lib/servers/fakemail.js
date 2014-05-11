@@ -1,40 +1,46 @@
+/*jshint node: true, browser: true */
+'use strict';
+
 var server = require('mail-fakeservers');
 var msgGen = require('./messageGenerator');
 
 /**
  * Updates given object with the state from an imapStack.
  *
- * @param {Object} state target.
+ * @param {Object} serverAccount target.
  * @param {Object} stack to pull updates from.
  * @param {Object} options for setup.
  */
-function updateState(state, stack, options) {
+function updateState(serverAccount, stack, options) {
+  function mixinCommonAccountDetails(infobits) {
+    infobits.username = options.credentials.username;
+    infobits.password = options.credentials.password;
+    infobits.hostname = 'localhost';
+    // our fake servers do not support SSL or STARTTLS or anything good
+    infobits.socketType = 'plain';
+  }
+
   switch (options.type) {
     case 'imap':
-      state.receive = {
+      serverAccount.receive = {
         type: 'imap',
         port: stack.imapPort
       };
       break;
     case 'pop3':
-      state.receive = {
+      serverAccount.receive = {
         type: 'pop3',
         port: stack.pop3Port
       };
       break;
   }
-  state.send = {
+  mixinCommonAccountDetails(serverAccount.receive);
+
+  serverAccount.send = {
     type: 'smtp',
     port: stack.smtpPort
   };
-
-  [state.receive, state.send].forEach(function(serverState) {
-    serverState.username = options.credentials.username;
-    serverState.password = options.credentials.password;
-    serverState.hostname = 'localhost';
-    // our fake servers do not support SSL or STARTTLS or anything good
-    serverState.socketType = 'plain';
-  });
+  mixinCommonAccountDetails(serverAccount.send);
 }
 
 var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
@@ -57,6 +63,8 @@ function formatImapDateTime(date) {
 
 function ServerAccount() {
   this._serverStack = null;
+
+  this._msgGen = new msgGen.MessageGenerator();
 }
 ServerAccount.prototype = {
   haveFolderWithMessagesNewestToOldest: function(folderName, msgDefs) {
@@ -93,7 +101,7 @@ ServerAccount.prototype = {
       msgReps.push(rep);
     });
 
-    this._serverStack.addMessageToFolder({
+    this._serverStack.addMessagesToFolder({
       name: folderName,
       messages: msgReps
     });
@@ -118,11 +126,11 @@ function use(options, mochaContext) {
    * @type {Object}
    * @private
    */
-  var state = new ServerAccount();
-  state.displayName = options.displayName;
-  state.emailAddress = options.emailAddress;
+  var serverAccount = new ServerAccount();
+  serverAccount.displayName = options.displayName;
+  serverAccount.emailAddress = options.emailAddress;
 
-  state.credentials = options.credentials;
+  serverAccount.credentials = options.credentials;
 
   // spawns servers
   var controlServer;
@@ -150,13 +158,11 @@ function use(options, mochaContext) {
         break;
     }
 
-    state._msgGen = new msgGen.MessageGenerator();
-
     controlServer[creationFunc](options, function(err, _serverStack) {
       // update the state information
-      updateState(state, _serverStack, options);
+      updateState(serverAccount, _serverStack, options);
 
-      serverStack = state._serverStack = _serverStack;
+      serverStack = serverAccount._serverStack = _serverStack;
       done(err);
     });
   });
@@ -171,7 +177,7 @@ function use(options, mochaContext) {
     controlServer.kill();
   });
 
-  return state;
+  return serverAccount;
 }
 
 module.exports.use = use;

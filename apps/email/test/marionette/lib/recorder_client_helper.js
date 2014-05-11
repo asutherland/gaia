@@ -10,6 +10,10 @@ var path = require('path');
 var xRecorder = require('x-recorder');
 var EventEmitter = require('events').EventEmitter;
 
+// XXX until this is in gaia/shared/test/integration we need this here.
+marionette.plugin('logger', require('marionette-js-logger'));
+
+
 /**
  * Return true if our target is (local) b2g-desktop and we have xvfb and ffmpeg
  * available.
@@ -48,8 +52,11 @@ function normalizeTestFilePath(file) {
     useRelPath += parts[appDirIndex + 1] + path.sep;
   }
 
-  // Just use the file-name sans-extension (to avoid confusion)
-  useRelPath += path.basename(file, path.extname(file));
+  // Just use the file-name sans-extension (to avoid confusion) and
+  // spaces-coverted-to-underscores (since spaces can be annoying in command
+  // lines)
+  useRelPath += path.basename(file, path.extname(file))
+                    .replace(/ /g, '_');
 
   return useRelPath;
 }
@@ -62,8 +69,6 @@ function normalizeTestTitleToFile(title) {
 }
 
 exports.recordedMarionetteClient = function() {
-
-
   // Note: all settings are biased towards the e-mail app's use-case right now.
   //
   // Also, we will mutate this after we spin up the xvfb instance; this entire
@@ -101,6 +106,8 @@ exports.recordedMarionetteClient = function() {
     return marionette.client(profileSettings);
   }
 
+console.log('IN RECORDER LAND');
+
   // Use the dominant/smallest resolution we have for tests by default.  We
   // will probably need to actually run with permutations in the future.
   var dimWidth = 320;
@@ -120,6 +127,8 @@ exports.recordedMarionetteClient = function() {
   // We want our suite setup to run prior to the host creation so we can set-up
   // the xvfb instance.
   suiteSetup(function(done) {
+console.log('creating xvfb');
+
     xvfb = new xRecorder.Xvfb({
       dimensions: xvfbDimensions,
     });
@@ -129,20 +138,25 @@ exports.recordedMarionetteClient = function() {
           DISPLAY: ':' + xvfb.display
         }
       };
+console.log('xvfb started. super happy!');
       done();
     });
   });
 
   // Likewise, we want to start recording prior to each test case.
   setup(function(done) {
+console.log('creating log');
+
     var curTest = this.currentTest;
 
     testArtifactsDir = 'artifacts' + path.sep +
-                         normalizeTestFilePath(curTest) + path.sep;
+                         normalizeTestFilePath(curTest.title) + path.sep;
 
-    // everything else we're doing is inherently dependent on this to happen,
-    // so just do it synchronously (for now)
-    fs.mkdirSync(testArtifactsDir);
+    // Everything else we're doing is inherently dependent on creating the dir,
+    // so just do it synchronously (for now).
+    if (!fs.existsSync(testArtifactsDir)) {
+      fs.mkdirSync(testArtifactsDir);
+    }
 
     var basenamePath = testArtifactsDir +
                          normalizeTestTitleToFile(curTest.title);
@@ -160,15 +174,11 @@ exports.recordedMarionetteClient = function() {
       jsonLogPath,
       { flags: 'w', encoding: 'utf8', mode: /* 0o666 */ 483 });
 
-    client.logger.on('message', function(msg) {
-      var logObj = {
-        source: 'client',
-        type: 'log',
-        msg: msg
-      };
-      logStream.write(JSON.stringify(logObj) + '\n');
-    });
+    // We cannot access client.logger until the plugin is spun up at the
+    // 'startSession' hook, to defer registering for messages until after that
+    // time.  (See below.)
 
+console.log('creating xcapture');
     xcapture = new xRecorder.XCapture({
       display: xvfb.display,
       output: videoPath,
@@ -182,17 +192,19 @@ exports.recordedMarionetteClient = function() {
 
   // Fetch the logs before we shut down the host.
   teardown(function() {
+console.log('grabbing log messages at shutdown');
     client.logger.grabLogMessages();
   });
 
   // Investigate failures and log state.
   teardown(function() {
+console.log('failcheck', this.currentTest.state);
     if (this.currentTest.state !== 'failed') {
       return;
     }
 
     var failureDetails = {};
-    client.emit('fill-in-failure-details', failureDetails);
+    client.recorderHelper.emit('fill-in-failure-details', failureDetails);
     var failureLog = {
       source: 'test',
       type: 'failureLog',
@@ -210,6 +222,27 @@ exports.recordedMarionetteClient = function() {
       logStream.write(JSON.stringify(obj) + '\n');
     }
   };
+
+  // - Things that require the plugins to exist.
+  // Plugins are created during the setup() phase of marionette-js-runner's
+  // client-creating logic.  That stage also creates the session as a blocking
+  // asynchronous process.  Thus we are ensured that client.logger exists by
+  // the time our function is called since we are calling setup() after
+  // marionette.client.  However, when we become a plugin we will want to wait
+  // for startSession since that ensures all plugins have been initialized
+  // without requiring an explicit plugin ordering.
+  setup(function() {
+    client.addHook('startSession', function() {
+      client.logger.on('message', function(msg) {
+        var logObj = {
+          source: 'client',
+          type: 'log',
+          msg: msg
+        };
+        logStream.write(JSON.stringify(logObj) + '\n');
+      });
+    });
+  });
 
   // But we want to stop recording after the host gets torn down.
   teardown(function(done) {

@@ -1,3 +1,4 @@
+/*jshint node: true, browser: true */
 'use strict';
 var baseCardMagic = require('./base_card_magic');
 
@@ -11,6 +12,6 @@ SetupProgressHelper.prototype = {
 
 baseCardMagic.mixInWisDOM({
   prototype: SetupProgressHelper,
-  cardName: 'setup_progress',
+  type: 'setup_progress',
   selector: '.card-setup-progress'
 });

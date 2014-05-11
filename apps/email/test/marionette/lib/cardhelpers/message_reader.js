@@ -1,3 +1,4 @@
+/*jshint node: true, browser: true */
 'use strict';
 var baseCardMagic = require('./base_card_magic');
 

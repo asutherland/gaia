@@ -1,5 +1,12 @@
 /*jshint node: true, browser: true */
 'use strict';
+<<<<<<< HEAD
+=======
+
+/**
+ * E-mail
+ */
+>>>>>>> 0eb0c33... rebase status commit
 
 var CardDealer = require('./cardhelpers/card_dealer');
 var LogHelper = require('./commonhelpers/log_helper');
@@ -32,7 +39,7 @@ function EmailApp(client) {
 
   this._logHelper = this._helpers.log = new LogHelper(this.client);
   this._cardHelper = this._helpers.card =
-    new CardDealer(this.client, this._helpersDict);
+    new CardDealer(this.client, this._helpers);
 }
 module.exports = EmailApp;
 
@@ -84,12 +91,18 @@ EmailApp.prototype = {
       return setupAccountInfo;
     }
 
-    setupAccountInfo.setupAccount({
+    var setupAccountPrefs = setupAccountInfo.setupAccount({
       serverAccount: opts.setupAccount,
       expectSuccess: true
     });
 
+    if (opts.accountOptions) {
+      setupAccountPrefs.fillByClickingAndTyping(opts.accountOptions);
+    }
+    var setupDone = setupAccountPrefs.next();
+    var messageList = setupDone.doneAddingAccountsShowMail();
 
+    return messageList;
   },
 
   /**
@@ -156,5 +169,8 @@ EmailApp.prototype = {
   notificationTriggeredExpectingMessageList: function() {
   },
 };
+<<<<<<< HEAD
 
 require('./debug')('email', Email.prototype);
+=======
+>>>>>>> 0eb0c33... rebase status commit

@@ -25,7 +25,8 @@ var templateNode = require('tmpl!./message_list.html'),
     appendMatchItemTo = common.appendMatchItemTo,
     displaySubject = common.displaySubject,
     prettyDate = common.prettyDate,
-    accessibilityHelper = require('shared/js/accessibility_helper');
+    accessibilityHelper = require('shared/js/accessibility_helper'),
+    logger = require('loggest_tiny');
 
 // Default data used for the VScroll component, when data is not
 // loaded yet for display in the virtual scroll listing.
@@ -845,11 +846,11 @@ MessageListCard.prototype = {
       return;
     }
 
-    console.log('message_list complete:',
-                headerCursor.messagesSlice.items.length, 'items of',
-                headerCursor.messagesSlice.headerCount,
-                'alleged known headers. canGrow:',
-                headerCursor.messagesSlice.userCanGrowDownwards);
+    logger.log('message_list.complete',
+               { items: headerCursor.messagesSlice.items.length,
+                 headerCount: headerCursor.messagesSlice.headerCount,
+                 canGrow: headerCursor.messagesSlice.userCanGrowDownwards,
+                 newEmailCount: newEmailCount });
     if (headerCursor.messagesSlice.userCanGrowDownwards) {
       this.syncMoreNode.classList.remove('collapsed');
     } else {

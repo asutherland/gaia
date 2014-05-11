@@ -1,3 +1,4 @@
+/*jshint node: true, browser: true */
 'use strict';
 var baseCardMagic = require('./base_card_magic');
 
@@ -35,7 +36,7 @@ SetupAccountInfoHelper.prototype = {
       outgoing: serverAccount.send
     });
 
-    this._logTestAction('hit next to initiate autoconfig');
+    this._logTestAction('hit next to initiate autoconfig, progress shows up');
     this._tap_next();
 
     var setupProgress = this._helpers.card.waitForAndWrapNewCard({
@@ -43,7 +44,7 @@ SetupAccountInfoHelper.prototype = {
     });
 
     // now let the account creation happen
-    this._logTestAction('releasing autoconfig');
+    this._logTestAction('releasing autoconfig, progress will disappear');
     autoconfigHack.releaseFakeAutoconfig(this._client);
 
     if (!opts.expectSuccess) {
@@ -55,13 +56,16 @@ SetupAccountInfoHelper.prototype = {
       return null;
     }
 
-
+    var setupAccountPrefs = this._helpers.card.waitForAndWrapNewCard({
+      type: 'setup_account_prefs',
+    });
+    return setupAccountPrefs;
   }
 };
 
 baseCardMagic.mixInWisDOM({
   prototype: SetupAccountInfoHelper,
-  cardName: 'setup_account_info',
+  type: 'setup_account_info',
   selector: '.card-setup-account-info',
   actions: {
     next: {

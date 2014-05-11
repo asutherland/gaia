@@ -1,3 +1,4 @@
+/*jshint node: true, browser: true */
 'use strict';
 var baseCardMagic = require('./base_card_magic');
 
@@ -93,6 +94,7 @@ MessageListHelper.prototype = {
 
 baseCardMagic.mixInSelectors({
   prototype: MessageListHelper.prototype,
+  type: 'message_list',
   actions: {
     notificationBar: {
       name: 'notificationBar',

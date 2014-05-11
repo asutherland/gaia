@@ -1,3 +1,4 @@
+/*jshint node: true, browser: true */
 'use strict';
 
 /**
@@ -23,6 +24,10 @@ function CardDealer(client, helpers) {
  *   Card mode
  * @param {Object} opts.waitForLog
  *   A log object pattern to wait for after the card shows up.
+ * @param {Boolean} [opts.cardsReset=false]
+ *   If true, we should expect that all cards were completely removed and that
+ *   this new card being added is basically the only card being displayed.  We
+ *   currently do not assert on the set of visible cards being just the new one.
  */
 CardDealer.prototype.waitForAndWrapNewCard = function(opts) {
   var pushPattern = {
@@ -35,13 +40,19 @@ CardDealer.prototype.waitForAndWrapNewCard = function(opts) {
     type: opts.type,
     mode: opts.mode || 'default'
   };
-  var patterns = [pushPattern, showPattern,];
+  var patterns = [pushPattern, showPattern];
   if (opts.waitForLog) {
     patterns.push(opts.waitForLog);
   }
+  if (opts.cardsReset) {
+    patterns.unshift({
+      w: 'cards.removeCardAndSuccessors',
+      toRemove: 'all'
+    });
+  }
 
   var logMatches = this._helpers.log.waitForLogMatching(patterns);
-  var cardIndex = logMatches[1].index;
+  var cardIndex = logMatches[patterns.indexOf(showPattern)].index;
   var cardInfo = this._getCardInfoByIndex(cardIndex);
   if (!cardInfo || cardInfo.type !== opts.type) {
     throw new Error('Card was not remotely what I expected!');
@@ -57,6 +68,13 @@ CardDealer.prototype.waitForAndWrapNewCard = function(opts) {
  *   The card that should be shown.
  */
 CardDealer.prototype.waitForExistingCardToBeShown = function(opts) {
+  var showPattern = {
+    w: 'cards.show:complete',
+    type: opts.card.type,
+    mode: opts.card.mode
+  };
+
+  this._helpers.log.waitForLogMatching(showPattern);
 };
 
 /**
@@ -67,6 +85,18 @@ CardDealer.prototype.waitForExistingCardToBeShown = function(opts) {
  * @param {CardHelper} opts.returnTo
  */
 CardDealer.prototype.waitForCardToBeRemovedAndUsToReturnTo = function(opts) {
+  var removePattern = {
+    w: 'cards.killing',
+    type: opts.removed.type,
+    mode: opts.removed.mode
+  };
+  var showPattern = {
+    w: 'cards.show:complete',
+    type: opts.returnTo.type,
+    mode: opts.returnTo.mode
+  };
+
+  this._helpers.log.waitForLogMatching([removePattern, showPattern]);
 };
 
 /**
@@ -122,3 +152,5 @@ CardDealer.prototype.extractAllCardStates = function() {
   var cardInsts = this._getCardList();
 
 };
+
+module.exports = CardDealer;
