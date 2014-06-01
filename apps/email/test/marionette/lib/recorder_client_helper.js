@@ -1,12 +1,16 @@
+/* jshint node: true, browser: true */
+/* global marionette, suiteSetup, setup, teardown, suiteTeardown */
+'use strict';
+
 /**
  * When running b2g-desktop and if available, wrap its invocation so that we are
  * able to record its execution to a .webm file.
  *
  **/
-'use strict';
 
 var fs = require('fs');
 var path = require('path');
+var mkdirp = require('mkdirp');
 var xRecorder = require('x-recorder');
 var EventEmitter = require('events').EventEmitter;
 
@@ -155,7 +159,7 @@ console.log('creating log');
     // Everything else we're doing is inherently dependent on creating the dir,
     // so just do it synchronously (for now).
     if (!fs.existsSync(testArtifactsDir)) {
-      fs.mkdirSync(testArtifactsDir);
+      mkdirp.sync(testArtifactsDir);
     }
 
     var basenamePath = testArtifactsDir +
@@ -178,7 +182,7 @@ console.log('creating log');
     // 'startSession' hook, to defer registering for messages until after that
     // time.  (See below.)
 
-console.log('creating xcapture');
+console.log('creating xcapture, save target of', videoPath);
     xcapture = new xRecorder.XCapture({
       display: xvfb.display,
       output: videoPath,
@@ -246,7 +250,9 @@ console.log('failcheck', this.currentTest.state);
 
   // But we want to stop recording after the host gets torn down.
   teardown(function(done) {
-    xcapture.stop(function() {
+console.log('stopping xcapture');
+    xcapture.stop(function(err) {
+console.log('  stopped. err?', err);
       logStream.end(function() {
         logStream = null;
         done();
@@ -257,7 +263,9 @@ console.log('failcheck', this.currentTest.state);
 
   // And to kill the xvfb instance after the host gets
   suiteTeardown(function(done) {
-    xvfb.stop(function() {
+console.log('stopping xvfb');
+    xvfb.stop(function(err) {
+console.log('  stopped. err?', err);
       done();
     });
     xvfb = null;

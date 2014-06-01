@@ -1,12 +1,9 @@
-/*jshint node: true, browser: true */
+/* jshint node: true, browser: true */
 'use strict';
-<<<<<<< HEAD
-=======
 
 /**
  * E-mail
  */
->>>>>>> 0eb0c33... rebase status commit
 
 var CardDealer = require('./cardhelpers/card_dealer');
 var LogHelper = require('./commonhelpers/log_helper');
@@ -169,8 +166,3 @@ EmailApp.prototype = {
   notificationTriggeredExpectingMessageList: function() {
   },
 };
-<<<<<<< HEAD
-
-require('./debug')('email', Email.prototype);
-=======
->>>>>>> 0eb0c33... rebase status commit
