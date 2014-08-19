@@ -170,6 +170,7 @@ function extractState_inClientContent(root, wisdef) {
         uiState[name] = elemState;
       }
     }
+    return uiState;
   }
   return process(root, wisdef);
 }
@@ -208,6 +209,10 @@ var requiredAttrs = ['prototype', 'type', 'selector'];
 /**
  */
 exports.mixInWisDOM = function(opts) {
+  if (typeof(opts.prototype) === 'function') {
+    throw new Error('Give us the prototype, not the constructor');
+  }
+
   // Helpful exploding "you forgot/typo'd this attribute, dummy!"
   for (var iAttr = 0; iAttr < requiredAttrs.length; iAttr++) {
     if (!(requiredAttrs[iAttr] in opts)) {
@@ -231,7 +236,7 @@ exports.mixInWisDOM = function(opts) {
 
   proto.getUIState = function() {
     var state = this._client.executeScript(extractState_inClientContent,
-                                           [opts]);
+                                           [this._domNode, opts]);
     return state;
   };
 

@@ -196,7 +196,7 @@ if (appMessages.hasPending('activity') ||
   // and block normal first card selection, wait for activity.
   cachedNode = null;
   waitForAppMessage = true;
-  console.log('email waitForAppMessage');
+  loggest.log('waitForAppMessages', { appMessages: appMessages });
 }
 
 if (appMessages.hasPending('alarm')) {
@@ -204,7 +204,7 @@ if (appMessages.hasPending('alarm')) {
   // as we were woken up just for the alarm.
   cachedNode = null;
   startedInBackground = true;
-  console.log('email startedInBackground');
+  loggest.log('startedInBackground');
 }
 
 // If still have a cached node, then show it.
@@ -377,7 +377,8 @@ function gateEntry(fn) {
     var entryTime = Date.now();
     // Only one entry per second.
     if (entryTime < lastEntryTime + 1000) {
-      console.log('email entry gate blocked fast repeated action');
+      loggest.log('blockedRepeatedAction',
+                  { entryTime: entryTime, lastEntryTime: lastEntryTime });
       return;
     }
     lastEntryTime = entryTime;
@@ -466,7 +467,7 @@ appMessages.on('activity', gateEntry(function(type, data, rawActivity) {
       initComposer();
     } else {
       waitingForCreateAccountPrompt = true;
-      console.log('email waitingForCreateAccountPrompt');
+      loggest.log('waitingForCreateAccountPrompt', { why: 'no accounts' });
       promptEmptyAccount();
     }
   } else {
@@ -476,7 +477,7 @@ appMessages.on('activity', gateEntry(function(type, data, rawActivity) {
     initComposer();
 
     waitingForCreateAccountPrompt = true;
-    console.log('email waitingForCreateAccountPrompt');
+    loggest.log('waitingForCreateAccountPrompt', { why: 'speculative' });
     model.latestOnce('acctsSlice', function activityOnAccount() {
       if (!model.hasAccount()) {
         promptEmptyAccount();
@@ -567,4 +568,4 @@ model.init();
 });
 
 // Run the app module, bring in fancy logging
-requirejs(['console_hook', 'cards/message_list', 'mail_app']);
+requirejs(['cards/message_list', 'mail_app']);

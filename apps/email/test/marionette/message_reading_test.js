@@ -13,7 +13,7 @@ marionette('email', function() {
 
   test('message reading', function() {
     // default server
-    serverAccount.haveFolderWithMessagesNewestToOldest(
+    var messages = serverAccount.haveFolderWithMessagesNewestToOldest(
       'INBOX',
       [
         { subject: 'Alpha' },

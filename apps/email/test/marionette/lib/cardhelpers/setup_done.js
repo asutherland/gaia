@@ -20,7 +20,7 @@ SetupDoneHelper.prototype = {
 };
 
 baseCardMagic.mixInWisDOM({
-  prototype: SetupDoneHelper,
+  prototype: SetupDoneHelper.prototype,
   type: 'setup_done',
   selector: '.card-setup-done',
   actions: {
@@ -34,3 +34,5 @@ baseCardMagic.mixInWisDOM({
     }
   }
 });
+
+module.exports = SetupDoneHelper;

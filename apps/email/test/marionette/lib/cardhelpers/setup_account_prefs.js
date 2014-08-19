@@ -16,7 +16,7 @@ SetupAccountPrefsHelper.prototype = {
 };
 
 baseCardMagic.mixInWisDOM({
-  prototype: SetupAccountPrefsHelper,
+  prototype: SetupAccountPrefsHelper.prototype,
   type: 'setup_account_prefs',
   selector: '.card-setup-account-prefs',
   actions: {
@@ -36,3 +36,5 @@ baseCardMagic.mixInWisDOM({
     }
   }
 });
+
+module.exports = SetupAccountPrefsHelper;

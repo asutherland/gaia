@@ -12,6 +12,9 @@
 function CardDealer(client, helpers) {
   this._client = client;
   this._helpers = helpers;
+
+  this._client.recorderHelper.on('fill-in-failure-details',
+                                 this._fillInFailureDetails.bind(this));
 }
 
 /**
@@ -104,7 +107,7 @@ CardDealer.prototype.waitForCardToBeRemovedAndUsToReturnTo = function(opts) {
  */
 CardDealer.prototype._getCardInfoByIndex = function(index) {
   return this._client.executeScript(function(index) {
-    var Cards = window.require('mail_common').Cards;
+    var Cards = window.wrappedJSObject.requirejs('mail_common').Cards;
     var cardInst = Cards._cardStack[index];
     if (!cardInst) {
       return null;
@@ -122,7 +125,7 @@ CardDealer.prototype._getCardInfoByIndex = function(index) {
  */
 CardDealer.prototype._getCardList = function() {
   return this._client.executeScript(function() {
-    var Cards = window.require('mail_common').Cards;
+    var Cards = window.wrappedJSObject.requirejs('mail_common').Cards;
     return Cards._cardStack.map(function(cardInst) {
       return {
         type: cardInst.cardDef.name,
@@ -149,8 +152,36 @@ CardDealer.prototype._wrapCardWithHelper = function(type, domNode) {
  * cards.
  */
 CardDealer.prototype.extractAllCardStates = function() {
-  var cardInsts = this._getCardList();
+  var cardInfos = this._getCardList();
 
+  var cardInfoAndStates = cardInfos.map(function(cardInfo) {
+    try {
+      var helper = this._wrapCardWithHelper(cardInfo.type, cardInfo.domNode);
+      return {
+        type: cardInfo.type,
+        mode: cardInfo.mode,
+        state: helper.getUIState()
+      };
+    }
+    catch(ex) {
+      return {
+        type: cardInfo.type,
+        mode: cardInfo.mode,
+        state: null,
+        error: {
+          name: ex.name,
+          message: ex.message,
+          stack: ex.stack
+        }
+      };
+    }
+  }.bind(this));
+
+  return cardInfoAndStates;
+};
+
+CardDealer.prototype._fillInFailureDetails = function(details) {
+  details.cards = this.extractAllCardStates();
 };
 
 module.exports = CardDealer;

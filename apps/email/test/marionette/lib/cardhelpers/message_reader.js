@@ -6,11 +6,18 @@ function MessageReaderHelper(coreOpts) {
   this._init(coreOpts);
 }
 MessageReaderHelper.prototype = {
-
+  /**
+   * Use the up arrow button to advance to the message above the current one in
+   * the message list AKA the chronologically newer message.
+   */
   advanceUp: function(desc, opts) {
     this.tap_msgUp();
   },
 
+  /**
+   * Use the down arrow button to advance to the message below the current one
+   * in the message list AKA the chronologically older message.
+   */
   advanceDown: function(desc, opts) {
     this.tap_msgDown();
   },

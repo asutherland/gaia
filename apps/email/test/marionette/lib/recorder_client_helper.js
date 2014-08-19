@@ -122,7 +122,7 @@ console.log('IN RECORDER LAND');
   var windowPaddingY = 10;
 
   var xvfbDimensions = (dimWidth + windowPaddingX) + 'x' +
-                       (dimHeight + windowPaddingY) + 'x24';
+                       (dimHeight + windowPaddingY);
 
   var testArtifactsDir;
 
@@ -134,7 +134,7 @@ console.log('IN RECORDER LAND');
 console.log('creating xvfb');
 
     xvfb = new xRecorder.Xvfb({
-      dimensions: xvfbDimensions,
+      dimensions: xvfbDimensions + 'x24',
     });
     xvfb.start(function() {
       profileSettings.hostOptions = {
@@ -186,7 +186,9 @@ console.log('creating xcapture, save target of', videoPath);
     xcapture = new xRecorder.XCapture({
       display: xvfb.display,
       output: videoPath,
-      codec: 'libvpx'
+      tool: 'avconv',
+      codec: 'libvpx',
+      dimensions: xvfbDimensions
     });
     xcapture.start(function() {
       done();
@@ -207,6 +209,7 @@ console.log('failcheck', this.currentTest.state);
       return;
     }
 
+console.log('FAILURE FAILURE FAILURE, filling in details');
     var failureDetails = {};
     client.recorderHelper.emit('fill-in-failure-details', failureDetails);
     var failureLog = {
@@ -237,6 +240,7 @@ console.log('failcheck', this.currentTest.state);
   // without requiring an explicit plugin ordering.
   setup(function() {
     client.addHook('startSession', function() {
+console.log('listening for logger messages');
       client.logger.on('message', function(msg) {
         var logObj = {
           source: 'client',

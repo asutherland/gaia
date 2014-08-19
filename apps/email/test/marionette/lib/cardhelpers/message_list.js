@@ -9,9 +9,16 @@ MessageListHelper.prototype = {
   //////////////////////////////////////////////////////////////////////////////
   // Folder Navigation
 
+  /**
+   * Switch to the inbox of the given account.
+   */
   switchToAccountInbox: function(serverAccount) {
   },
 
+  /**
+   * Switch to whatever folder first matches the given folder spec for the
+   * currently selected account.
+   */
   switchToFolder: function(folderSpec) {
     throw new Error('Welcome to the commons; implement me!');
   },

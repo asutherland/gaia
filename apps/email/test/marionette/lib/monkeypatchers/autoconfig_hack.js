@@ -22,6 +22,7 @@
  */
 exports.prepareFakeAutoconfig = function(client, domainInfo) {
   client.executeScript(function(fakeDomainInfo) {
+    var MailAPI = window.wrappedJSObject.MailAPI;
     // If someone is debugging things, make it REAL obvious that we're messing
     // with things by having an explicit attribute over us calling the
     // prototype, etc. for the time we're alive.
@@ -34,6 +35,7 @@ exports.prepareFakeAutoconfig = function(client, domainInfo) {
 
 exports.releaseFakeAutoconfig = function(client) {
   client.executeScript(function() {
+    var MailAPI = window.wrappedJSObject.MailAPI;
     var args = MailAPI._savedCreateCallArgs;
     MailAPI._savedCreateCallArgs = null;
     MailAPI._realTryToCreateAccount(args[0], args[1], args[2]);

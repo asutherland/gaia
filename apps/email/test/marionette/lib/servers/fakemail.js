@@ -65,23 +65,76 @@ function ServerAccount() {
   this._serverStack = null;
 
   this._msgGen = new msgGen.MessageGenerator();
+  this._messagesAddedPerFolder = {};
 }
 ServerAccount.prototype = {
+  /**
+   * Populate the given folder, creating if if needed, with messages based on
+   * the parameters you provide.
+   *
+   * Messages are spaced one day apart starting from one day ago.  If you would
+   * like to later add "new" messages that show up in the folder, use the
+   * method `addNewMessagesToFolder` below.
+   *
+   * If you want something fancier time-wise then you should probably either be
+   * writing a gaia-email-libs-and-more back-end test or a unit test.  Time is a
+   * *major hassle* in automated tests, and you'll run into all kinds of
+   * edge-cases related to timezones and the time the test is running, etc.
+   * Having said that, at some point it will be appropriate to get fancier about
+   * this in the front-end tests, just make sure you realize when you've reached
+   * that line and are sure you want to cross it.
+   *
+   * @return {SyntheticMessage[]}
+   *   The array of synthetic messages we created.
+   */
   haveFolderWithMessagesNewestToOldest: function(folderName, msgDefs) {
     if (folderName.toLowerCase() !== 'inbox') {
       this._serverStack.addFolder(folderName);
     }
 
-    var msgReps = [];
+    return this._commonAddMessages(
+      folderName, msgDefs,
+      function templateMaker(msgDef, iMsgDef) {
+        return {
+          age: { days: iMsgDef + 1 }
+        };
+      });
+  },
+
+  /**
+   * Add some new messages to the folder
+   */
+  addNewMessagesToFolderNewestToOldest: function(folderName, msgDefs) {
+    return this._commonAddMessages(
+      folderName, msgDefs,
+      function templateMaker(msgDef, iMsgDef, alreadyAdded) {
+        return {
+          age: { days: 1, minutes: -(iMsgDef + alreadyAdded)}
+        };
+      });
+  },
+
+  _commonAddMessages: function(folderName, msgDefs, templateMaker) {
+    var alreadyAdded = this._messagesAddedPerFolder[folderName];
+    if (!alreadyAdded) {
+      alreadyAdded = this._messagesAddedPerFolder[folderName] = 0;
+    }
+
+    var synMsgs = [];
+    var fakeServerMsgReps = [];
     var msgGen = this._msgGen;
     msgDefs.forEach(function(msgDef, iMsgDef) {
-      var tmpl = {
-        age: { days: iMsgDef }
-      };
+      // I don't have a great reason for separating alreadyAdded from iMsgDef
+      // here.  The main goal is to let addNewMessagesToFolderNewestToOldest
+      // be used multiple times and have the messages constantly getting newer.
+      // I've kept iMsgDef distinct mainly for debug logging purposes...
+      var tmpl = templateMaker(msgDef, iMsgDef, alreadyAdded);
       for (var key in msgDef) {
         tmpl[key] = msgDef[key];
       }
-      var message = msgGen.makeMessage(tmpl);
+      var synMsg = msgGen.makeMessage(tmpl);
+      synMsgs.push(synMsg);
+
       // Generate an rfc822 message, prefixing on a fake 'received' line so that
       // our INTERNALDATE detecting logic can be happy.
       //
@@ -90,22 +143,28 @@ ServerAccount.prototype = {
       // dependent.
       var msgString =
         'Received: from 127.1.2.3 by 127.1.2.3; ' +
-        formatImapDateTime(message.date) + '\r\n' +
-        message.toMessageString();
+        formatImapDateTime(synMsg.date) + '\r\n' +
+        synMsg.toMessageString();
 
       var rep = {
         flags: [],
-        date: message.date.valueOf(),
+        date: synMsg.date.valueOf(),
         msgString: msgString
       };
-      msgReps.push(rep);
+      fakeServerMsgReps.push(rep);
     });
 
     this._serverStack.addMessagesToFolder({
       name: folderName,
-      messages: msgReps
+      messages: fakeServerMsgReps
     });
+
+    alreadyAdded += msgDefs.length;
+    this._messagesAddedPerFolder[folderName] = alreadyAdded;
+
+    return synMsgs;
   }
+
 };
 
 /**

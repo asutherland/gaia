@@ -21,7 +21,9 @@ function EmailApp(client) {
     // there.  See our README.md for our strategy and related details.  If we're
     // waiting for something asynchronous to happen we wait for a log entry and
     // we DO allow for random VM suckiness and delays there.
-    searchTimeout: 0
+    searchTimeout: 0,
+    // We always poke around in content-space JS
+    context: 'content'
   });
 
   // we have a bunch'o'helpers; our options are to pass around a crap-ton of

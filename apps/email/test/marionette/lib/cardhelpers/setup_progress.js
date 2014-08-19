@@ -11,7 +11,9 @@ SetupProgressHelper.prototype = {
 };
 
 baseCardMagic.mixInWisDOM({
-  prototype: SetupProgressHelper,
+  prototype: SetupProgressHelper.prototype,
   type: 'setup_progress',
   selector: '.card-setup-progress'
 });
+
+exports.module = SetupProgressHelper;

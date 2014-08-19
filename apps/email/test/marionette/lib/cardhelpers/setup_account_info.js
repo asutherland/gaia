@@ -64,7 +64,7 @@ SetupAccountInfoHelper.prototype = {
 };
 
 baseCardMagic.mixInWisDOM({
-  prototype: SetupAccountInfoHelper,
+  prototype: SetupAccountInfoHelper.prototype,
   type: 'setup_account_info',
   selector: '.card-setup-account-info',
   actions: {
@@ -109,3 +109,5 @@ baseCardMagic.mixInWisDOM({
     }
   }
 });
+
+module.exports = SetupAccountInfoHelper;
