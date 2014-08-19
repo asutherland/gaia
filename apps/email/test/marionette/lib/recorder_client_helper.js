@@ -72,6 +72,18 @@ function normalizeTestTitleToFile(title) {
   return title.replace(/\W+/g, '_').substring(0, 24).toLowerCase();
 }
 
+/**
+ * The system app shows startup logos or videos or what not, depending on
+ * configuration.  Although this is not a bad idea, as of writing this, the
+ * logo's fadeout styling in initlogo.css takes 2 seconds to complete, which
+ * is not helpful when unit testing.  Until we have the time dilation factor
+ * available to us for animations, it's best to just clobber it to death.
+ *
+ * The code lives in apps/system/js/init_logo_handler.js.
+ */
+function nukeAnnoyingOsLogo() {
+}
+
 exports.recordedMarionetteClient = function() {
   // Note: all settings are biased towards the e-mail app's use-case right now.
   //
@@ -97,7 +109,7 @@ exports.recordedMarionetteClient = function() {
       'keyboard.ftu.enabled': false,
       // lock-screen stuff:
       // 'screen.timeout'
-      // 'lockscreen.enabled'
+      'lockscreen.enabled': false
       // 'lockscreen.locked'
     }
     // no 'apps' needed
@@ -224,11 +236,15 @@ console.log('FAILURE FAILURE FAILURE, filling in details');
   // Disable the default script timeout which logs data-URI screenshots.
   client.onScriptTimeout = null;
   client.recorderHelper = new EventEmitter();
+  // helper method to help us/others be able to explicitly log something to the
+  // log file.
   client.recorderHelper.logObj = function(obj) {
     if (logStream) {
       logStream.write(JSON.stringify(obj) + '\n');
     }
   };
+
+
 
   // - Things that require the plugins to exist.
   // Plugins are created during the setup() phase of marionette-js-runner's
@@ -239,7 +255,7 @@ console.log('FAILURE FAILURE FAILURE, filling in details');
   // for startSession since that ensures all plugins have been initialized
   // without requiring an explicit plugin ordering.
   setup(function() {
-    client.addHook('startSession', function() {
+//    client.addHook('startSession', function() {
 console.log('listening for logger messages');
       client.logger.on('message', function(msg) {
         var logObj = {
@@ -249,7 +265,8 @@ console.log('listening for logger messages');
         };
         logStream.write(JSON.stringify(logObj) + '\n');
       });
-    });
+      nukeAnnoyingOsLogo(client);
+//    });
   });
 
   // But we want to stop recording after the host gets torn down.

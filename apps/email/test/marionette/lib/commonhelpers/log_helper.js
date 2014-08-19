@@ -54,7 +54,7 @@ LogHelper.prototype.waitForLogMatching = function(patterns) {
         return false;
       }
     }
-    matches.push(msg);
+    matches.push(logObj);
     // Okay, it was a match, return true if we're all done because we have no
     // more patterns to check out.
     return (++iPattern >= patterns.length);
@@ -66,7 +66,7 @@ LogHelper.prototype.waitForLogMatching = function(patterns) {
   return matches;
 };
 
-LogHelper.logTestAction = function(description) {
+LogHelper.prototype.logTestAction = function(description) {
   if (this._client.recorderHelper) {
     this._client.recorderHelper.logObj({
       source: 'test',

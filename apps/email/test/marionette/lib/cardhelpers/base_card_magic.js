@@ -230,7 +230,7 @@ exports.mixInWisDOM = function(opts) {
     this.mode = coreOpts.mode;
   };
 
-  this._logTestAction = function(description) {
+  proto._logTestAction = function(description) {
     this._helpers.log.logTestAction(description);
   },
 
@@ -262,7 +262,6 @@ exports.mixInWisDOM = function(opts) {
       if (!inputInfo) {
         throw new Error('No input defined for "' + key + '"');
       }
-
       var elem = this._domNode.findElement(inputInfo.selector);
       var tagName = elem.tagName();
       switch (tagName) {

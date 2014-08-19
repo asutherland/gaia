@@ -33,16 +33,18 @@ function CardDealer(client, helpers) {
  *   currently do not assert on the set of visible cards being just the new one.
  */
 CardDealer.prototype.waitForAndWrapNewCard = function(opts) {
+  var useMode = opts.mode || 'default';
   var pushPattern = {
     w: 'cards.push',
     type: opts.type,
-    mode: opts.mode || 'default'
+    mode: useMode
   };
   var showPattern = {
     w: 'cards.show:complete',
     type: opts.type,
-    mode: opts.mode || 'default'
+    mode: useMode
   };
+  // The patterns to wait for IN SEQUENCE (AND not OR).
   var patterns = [pushPattern, showPattern];
   if (opts.waitForLog) {
     patterns.push(opts.waitForLog);
@@ -57,11 +59,16 @@ CardDealer.prototype.waitForAndWrapNewCard = function(opts) {
   var logMatches = this._helpers.log.waitForLogMatching(patterns);
   var cardIndex = logMatches[patterns.indexOf(showPattern)].index;
   var cardInfo = this._getCardInfoByIndex(cardIndex);
-  if (!cardInfo || cardInfo.type !== opts.type) {
-    throw new Error('Card was not remotely what I expected!');
+  if (!cardInfo) {
+    throw new Error('No card info available from the remote side for card #' +
+                    cardIndex);
+  }
+  if (cardInfo.type !== opts.type) {
+    throw new Error('Expected "' + opts.type + '" card but got "' +
+                    cardInfo.type + '" card');
   }
 
-  return this._wrapCardWithHelper(opts.type, cardInfo.domNode);
+  return this._wrapCardWithHelper(opts.type, useMode, cardInfo.domNode);
 };
 
 /**
@@ -106,7 +113,7 @@ CardDealer.prototype.waitForCardToBeRemovedAndUsToReturnTo = function(opts) {
  * Extract the type/mode/domNode for the card at the given index on the client.
  */
 CardDealer.prototype._getCardInfoByIndex = function(index) {
-  return this._client.executeScript(function(index) {
+  var rawResult = this._client.executeScript(function(index) {
     var Cards = window.wrappedJSObject.requirejs('mail_common').Cards;
     var cardInst = Cards._cardStack[index];
     if (!cardInst) {
@@ -118,13 +125,20 @@ CardDealer.prototype._getCardInfoByIndex = function(index) {
       domNode: cardInst.domNode
     };
   }, [index]);
+  // _executeScript doesn't recursively transform, so we need to manually wrap
+  // the element.
+  if (rawResult && rawResult.domNode) {
+    rawResult.domNode = new this._client.Element(rawResult.domNode.ELEMENT,
+                                                 this._client);
+  }
+  return rawResult;
 };
 
 /**
  * Get the current list of cards on the client.
  */
 CardDealer.prototype._getCardList = function() {
-  return this._client.executeScript(function() {
+  var rawResults = this._client.executeScript(function() {
     var Cards = window.wrappedJSObject.requirejs('mail_common').Cards;
     return Cards._cardStack.map(function(cardInst) {
       return {
@@ -134,14 +148,24 @@ CardDealer.prototype._getCardList = function() {
       };
     });
   });
+  // wrap all the element UUID handles into proper Marionette.Element instances
+  rawResults.forEach(function(raw) {
+    raw.domNode = new this._client.Element(raw.domNode.ELEMENT, this._client);
+  }.bind(this));
+  return rawResults;
 };
 
-CardDealer.prototype._wrapCardWithHelper = function(type, domNode) {
+CardDealer.prototype._wrapCardWithHelper = function(type, mode, domNode) {
   var constructor = require('./' + type);
+  if (typeof(constructor) !== 'function') {
+    throw new Error('The cardhelper module for ' + type +
+                    ' is not a function!');
+  }
   var helper = new constructor({
     client: this._client,
     helpers: this._helpers,
-    domNode: domNode
+    domNode: domNode,
+    mode: mode
   });
   return helper;
 };
@@ -156,7 +180,8 @@ CardDealer.prototype.extractAllCardStates = function() {
 
   var cardInfoAndStates = cardInfos.map(function(cardInfo) {
     try {
-      var helper = this._wrapCardWithHelper(cardInfo.type, cardInfo.domNode);
+      var helper = this._wrapCardWithHelper(cardInfo.type, cardInfo.mode,
+                                            cardInfo.domNode);
       return {
         type: cardInfo.type,
         mode: cardInfo.mode,

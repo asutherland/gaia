@@ -2,8 +2,8 @@
 'use strict';
 var baseCardMagic = require('./base_card_magic');
 
-function SetupAccountPrefsHelper(client) {
-  this._init(client);
+function SetupAccountPrefsHelper(opts) {
+  this._init(opts);
 }
 SetupAccountPrefsHelper.prototype = {
   next: function() {
@@ -12,6 +12,7 @@ SetupAccountPrefsHelper.prototype = {
     var setupDone = this._helpers.card.waitForAndWrapNewCard({
       type: 'setup_done'
     });
+    return setupDone;
   }
 };
 

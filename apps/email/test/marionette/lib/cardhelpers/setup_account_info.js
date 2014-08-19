@@ -4,8 +4,8 @@ var baseCardMagic = require('./base_card_magic');
 
 var autoconfigHack = require('../monkeypatchers/autoconfig_hack');
 
-function SetupAccountInfoHelper(client) {
-  this._init(client);
+function SetupAccountInfoHelper(opts) {
+  this._init(opts);
 }
 SetupAccountInfoHelper.prototype = {
   /**

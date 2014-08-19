@@ -4,8 +4,8 @@ var baseCardMagic = require('./base_card_magic');
 
 var autoconfigHack = require('../monkeypatchers/autoconfig_hack');
 
-function SetupProgressHelper(client) {
-  this._client = client;
+function SetupProgressHelper(opts) {
+  this._init(opts);
 }
 SetupProgressHelper.prototype = {
 };
@@ -15,5 +15,4 @@ baseCardMagic.mixInWisDOM({
   type: 'setup_progress',
   selector: '.card-setup-progress'
 });
-
-exports.module = SetupProgressHelper;
+module.exports = SetupProgressHelper;

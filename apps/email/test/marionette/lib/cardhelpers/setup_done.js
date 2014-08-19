@@ -2,13 +2,13 @@
 'use strict';
 var baseCardMagic = require('./base_card_magic');
 
-function SetupDoneHelper(client) {
-  this._init(client);
+function SetupDoneHelper(opts) {
+  this._init(opts);
 }
 SetupDoneHelper.prototype = {
   // FUTURE: add another account path.
 
-  doneAddingAccountShowMail: function() {
+  doneAddingAccountsShowMail: function() {
     this._logTestAction('hit show mail and go to the newly added inbox');
     this._tap_showMail();
     var messageList = this._helpers.card.waitForAndWrapNewCard({
@@ -16,6 +16,7 @@ SetupDoneHelper.prototype = {
       type: 'message_list',
       waitForLog: { w: 'message_list.complete' }
     });
+    return messageList;
   }
 };
 
