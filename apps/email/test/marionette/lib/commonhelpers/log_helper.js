@@ -71,7 +71,8 @@ LogHelper.prototype.logTestAction = function(description) {
     this._client.recorderHelper.logObj({
       source: 'test',
       type: 'testAction',
-      action: description
+      action: description,
+      timeStamp: Date.now()
     });
   }
 };

@@ -81,7 +81,13 @@ function normalizeTestTitleToFile(title) {
  *
  * The code lives in apps/system/js/init_logo_handler.js.
  */
-function nukeAnnoyingOsLogo() {
+function nukeAnnoyingOsLogo(client) {
+  // The system app is the top-level frame as far as Marionette is concerned.
+  // (shell.html is the true top-level, but hey.)
+  client.switchToFrame(null);
+  client.findElement('#os-logo').scriptWith(function(elem) {
+    elem.parentNode.removeChild(elem);
+  });
 }
 
 exports.recordedMarionetteClient = function() {
@@ -188,7 +194,7 @@ console.log('creating log');
 
     logStream = fs.createWriteStream(
       jsonLogPath,
-      { flags: 'w', encoding: 'utf8', mode: /* 0o666 */ 483 });
+      { flags: 'w', encoding: 'utf8', mode: /* 0o666 */ 438 });
 
     // We cannot access client.logger until the plugin is spun up at the
     // 'startSession' hook, to defer registering for messages until after that
@@ -203,6 +209,14 @@ console.log('creating xcapture, save target of', videoPath);
       dimensions: xvfbDimensions
     });
     xcapture.start(function() {
+      // This callback gets invoked when the first frame is output, or something
+      // like that, so we can use it as our time synchronization point.
+      client.recorderHelper.logObj({
+        source: 'test',
+        type: 'video',
+        path: videoPath,
+        startTS: Date.now()
+      });
       done();
     });
   });
@@ -256,6 +270,11 @@ console.log('FAILURE FAILURE FAILURE, filling in details');
   // without requiring an explicit plugin ordering.
   setup(function() {
 //    client.addHook('startSession', function() {
+      client.recorderHelper.logObj({
+        source: 'test',
+        type: 'start',
+        startTS: Date.now()
+      });
 console.log('listening for logger messages');
       client.logger.on('message', function(msg) {
         var logObj = {

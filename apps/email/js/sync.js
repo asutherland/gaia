@@ -210,7 +210,7 @@ define(function(require) {
           - messageSuid
      */
     api.oncronsyncstop = function(accountsResults) {
-      logger.log('cronsync:end', { accountIds: accountResults.accountIds });
+      logger.log('cronsync:end', { accountIds: accountsResults.accountIds });
 
       function finishSync() {
         evt.emit('cronSyncStop', accountsResults.accountIds);
