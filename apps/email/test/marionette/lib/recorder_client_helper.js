@@ -85,9 +85,11 @@ function nukeAnnoyingOsLogo(client) {
   // The system app is the top-level frame as far as Marionette is concerned.
   // (shell.html is the true top-level, but hey.)
   client.switchToFrame(null);
-  client.findElement('#os-logo').scriptWith(function(elem) {
+  var removedAtTS = client.findElement('#os-logo').scriptWith(function(elem) {
     elem.parentNode.removeChild(elem);
+    return Date.now();
   });
+  return removedAtTS;
 }
 
 exports.recordedMarionetteClient = function() {
@@ -98,11 +100,6 @@ exports.recordedMarionetteClient = function() {
   // instance is created.
   var profileSettings = {
     prefs: {
-      // Disable the keyboard for now; this can be re-enabled when we have
-      // implemented transition/animation acceleration.  While there are a set
-      // of edge-cases that the keyboard can cause, we have no tests for this
-      // area yet.
-      'dom.mozInputMethod.enabled': false,
       // Do not require the B2G-desktop app window to have focus (as per the
       // system window manager) in order for it to do focus-related things.
       'focusmanager.testmode': true,
@@ -110,9 +107,6 @@ exports.recordedMarionetteClient = function() {
     settings: {
       // Explicitly disable the FTU (first-run) series of cards
       'ftu.manifestURL': '',
-      // We also wouldn't want the keyboard FTU, although we've disabled the
-      // keyboard.
-      'keyboard.ftu.enabled': false,
       // lock-screen stuff:
       // 'screen.timeout'
       'lockscreen.enabled': false
@@ -139,8 +133,9 @@ console.log('IN RECORDER LAND');
   var windowPaddingX = 10;
   var windowPaddingY = 10;
 
-  var xvfbDimensions = (dimWidth + windowPaddingX) + 'x' +
-                       (dimHeight + windowPaddingY);
+  var vidWidth = dimWidth + windowPaddingX;
+  var vidHeight = dimHeight + windowPaddingY;
+  var xvfbDimensions = vidWidth + 'x' + vidHeight;
 
   var testArtifactsDir;
 
@@ -165,6 +160,7 @@ console.log('xvfb started. super happy!');
     });
   });
 
+  var videoPath;
   // Likewise, we want to start recording prior to each test case.
   setup(function(done) {
 console.log('creating log');
@@ -183,7 +179,7 @@ console.log('creating log');
     var basenamePath = testArtifactsDir +
                          normalizeTestTitleToFile(curTest.title);
 
-    var videoPath = basenamePath + '.webm';
+    videoPath = basenamePath + '.webm';
     // We write one JSON string per line since consumers should absolutely
     // process this as a stream rather than trying to load it as a single big
     // array.  While it might be friendly to try and let them do that load if
@@ -208,14 +204,19 @@ console.log('creating xcapture, save target of', videoPath);
       codec: 'libvpx',
       dimensions: xvfbDimensions
     });
-    xcapture.start(function() {
-      // This callback gets invoked when the first frame is output, or something
-      // like that, so we can use it as our time synchronization point.
+    xcapture.start(function(err, proc, startTimeSecs) {
+      // This start time will be accurate, but if you are doing something
+      // like encoding video to webm on the fly, frames may be dropped and
+      // sadness will result because the timestamps will become useless because
+      // in the case it's likely ffmpeg/avconv was not actually aware frames
+      // were being dropped and the timestamps will be lies.
       client.recorderHelper.logObj({
         source: 'test',
-        type: 'video',
+        type: 'video-start',
         path: videoPath,
-        startTS: Date.now()
+        startTS: Math.floor(startTimeSecs * 1000),
+        width: vidWidth,
+        height: vidHeight
       });
       done();
     });
@@ -241,6 +242,7 @@ console.log('FAILURE FAILURE FAILURE, filling in details');
     var failureLog = {
       source: 'test',
       type: 'failureLog',
+      timeStamp: Date.now(),
       details: failureDetails
     };
     client.recorderHelper.logObj(failureLog);
@@ -284,12 +286,25 @@ console.log('listening for logger messages');
         };
         logStream.write(JSON.stringify(logObj) + '\n');
       });
-      nukeAnnoyingOsLogo(client);
+      // To synchronize with the video, we tell it when we removed the splash
+      // screen and let the
+      var killedAt = nukeAnnoyingOsLogo(client);
+      client.recorderHelper.logObj({
+        source: 'test',
+        type: 'splashkilled',
+        timeStamp: killedAt
+      });
+
 //    });
   });
 
   // But we want to stop recording after the host gets torn down.
   teardown(function(done) {
+    client.recorderHelper.logObj({
+      source: 'test',
+      type: 'video-stop',
+      timeStamp: Date.now()
+    });
 console.log('stopping xcapture');
     xcapture.stop(function(err) {
 console.log('  stopped. err?', err);
