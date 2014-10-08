@@ -1013,16 +1013,18 @@ function cropPickedImage(fileinfo) {
                            console.error('while resizing image: ' + error);
                            blob = pickedFile;
                          }
-                         endPick(blob);
+                         endPick(blob, pickedFile.name);
                        });
     }
   }
 }
 
-function endPick(blob) {
+function endPick(blob, explicitName) {
   ensureFileBackedBlob(blob, function(file) {
     pendingPick.postResult({
       type: blob.type,
+      // provide the original name as an optional override
+      name: explicitName || blob.name,
       blob: file
     });
     cleanupPick();

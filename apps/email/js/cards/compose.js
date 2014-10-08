@@ -1065,7 +1065,9 @@ ComposeCard.prototype = {
         // it avoids needing to bundle util's dependencies in a built layer.
         require(['attachment_name'], function(attachmentName) {
           var blob = activity.result.blob,
-              name = activity.result.blob.name || activity.result.name,
+              // Favor an explicit name that overrides over the blob's innate
+              // name; this is necessary for cases like gallery where
+              name = activity.result.name || activity.result.blob.name,
               count = this.composer.attachments.length + 1;
 
           name = attachmentName.ensureName(blob, name, count);
