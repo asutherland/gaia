@@ -35,11 +35,15 @@ function ensureFileBackedBlob(blob, callback) {
   // Clean up any old files in the temporary directory and then call callback.
   function cleanupTempDir(callback) {
     var yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    // In the event our clock has been doing weird jumping around, we want to
+    // ensure we don't end up with temporary files stranded in the future.
+    var unreasonableFuture = new Date(Date.now() + 2 * 60 * 60 * 1000);
     var cursor = storage.enumerate(TMPDIR);
     cursor.onsuccess = function() {
       var file = cursor.result;
       if (file) {
-        if (file.lastModifiedDate < yesterday) {
+        if (file.lastModifiedDate < yesterday ||
+            file.lastModifiedDate > unreasonableFuture) {
           var request = storage.delete(file.name);
           // Make sure the deletion is complete before moving on.
           request.onsuccess = request.onerror = function() {
