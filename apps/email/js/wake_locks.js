@@ -111,8 +111,10 @@ define(function(require) {
     return 'id' + accountIds.join(' ');
   }
 
-  function onCronStop(accountIds) {
-    clearLocks(makeAccountKey(accountIds));
+  function onCronStop(accountIds, willClose) {
+    if (!willClose) {
+      clearLocks(makeAccountKey(accountIds));
+    }
   }
 
   evt.on('cronSyncWakeLocks', function(accountKey, locks) {

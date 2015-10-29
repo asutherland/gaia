@@ -222,8 +222,6 @@ define(function(require) {
       console.log('email oncronsyncstop: ' + accountsResults.accountIds);
 
       function finishSync() {
-        evt.emit('cronSyncStop', accountsResults.accountIds);
-
         // Mark this accountId set as no longer waiting.
         var accountKey = makeAccountKey(accountsResults.accountIds);
         waitingOnCron[accountKey] = false;
@@ -231,7 +229,10 @@ define(function(require) {
           return !!waitingOnCron[key];
         });
 
-        if (!hasBeenVisible && !stillWaiting) {
+        var willClose = !hasBeenVisible && !stillWaiting;
+        evt.emit('cronSyncStop', accountsResults.accountIds, willClose);
+
+        if (willClose) {
           console.log('sync completed in ' +
                      ((Date.now() - cronSyncStartTime) / 1000) +
                      ' seconds, closing mail app');
